@@ -161,7 +161,9 @@ export class App {
   private _render() {
     this._registry.getPlugins().forEach((plugin: IRunnablePlugin) => {
       plugin.render()
-      plugin.renderViews()
+    })
+    this._registry.getViews().forEach((view) => {
+      view.render()
     })
   }
 }

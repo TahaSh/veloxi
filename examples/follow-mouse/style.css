@@ -25,4 +25,5 @@ body {
   height: 50px;
   background: whitesmoke;
   border-radius: 5px;
+  will-change: transform;
 }
