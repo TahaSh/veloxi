@@ -1162,7 +1162,9 @@ class q {
   }
   _render() {
     this._registry.getPlugins().forEach((t) => {
-      t.render(), t.renderViews();
+      t.render();
+    }), this._registry.getViews().forEach((t) => {
+      t.render();
     });
   }
 }
