@@ -1,0 +1,42 @@
+{
+  "name": "veloxi",
+  "author": "Taha Shashtari (taha@tahazsh.com)",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "main": "./dist/veloxi.min.js",
+  "module": "./dist/veloxi.js",
+  "types": "./dist/veloxi.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/veloxi.js",
+      "require": "./dist/veloxi.min.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-dts": "^3.5.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TahaSh/veloxi.git"
+  },
+  "keywords": [
+    "interactive",
+    "transition",
+    "animation",
+    "drag",
+    "swipe",
+    "smooth"
+  ],
+  "license": "MIT"
+}
