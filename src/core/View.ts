@@ -9,7 +9,7 @@ import { ScaleProp } from '../view-props/ScaleProp'
 import { SizeProp } from '../view-props/SizeProp'
 
 export class View {
-  id: string
+  readonly id: string
   name: string
   element: HTMLElement
   styles: Partial<Record<keyof CSSStyleDeclaration, string>> = {}
