@@ -7,10 +7,10 @@ import {
 } from '../builtin-events/PointerEvents'
 import { DomObserver, NodeAddedEvent, NodeRemovedEvent } from './DomObserver'
 import { EventBus } from './EventBus'
-import { type IRunnablePlugin, PluginConfig, PluginFactory } from './Plugin'
+import { PluginConfig, PluginFactory } from './Plugin'
 import { Registry } from './Registry'
 
-export class App {
+class App {
   private _previousTime: number = 0
   private readonly _registry: Registry
   private readonly _eventBus: EventBus
@@ -25,19 +25,19 @@ export class App {
     new DomObserver(this._eventBus)
   }
 
-  addPlugin<TConfig extends PluginConfig>(
-    PluginCtor: PluginFactory<TConfig>,
+  addPlugin<TConfig extends PluginConfig = PluginConfig>(
+    pluginFactory: PluginFactory<TConfig>,
     config: TConfig = {} as TConfig
   ): void {
-    this._registry.createPlugin<TConfig>(PluginCtor, this._eventBus, config)
+    this._registry.createPlugin(pluginFactory, this._eventBus, config)
   }
 
   onPluginEvent<TEvent>(
-    PluginCtor: PluginFactory,
+    pluginFactory: PluginFactory,
     EventCtor: new (eventData: TEvent) => TEvent,
     listener: (eventData: TEvent) => void
   ) {
-    const plugin = this._registry.getPluginByName(PluginCtor.name)
+    const plugin = this._registry.getPluginByName(pluginFactory.pluginName!)
 
     if (plugin) {
       plugin.on(EventCtor, listener)
@@ -118,7 +118,7 @@ export class App {
       this._onDataChanged.bind(this)
     )
 
-    this._registry.getPlugins().forEach((plugin: IRunnablePlugin) => {
+    this._registry.getPlugins().forEach((plugin) => {
       plugin.subscribeToEvents(this._eventBus)
     })
   }
@@ -147,10 +147,10 @@ export class App {
       .getPlugins()
       .slice()
       .reverse()
-      .forEach((plugin: IRunnablePlugin) => {
+      .forEach((plugin) => {
         plugin.init()
       })
-    this._registry.getPlugins().forEach((plugin: IRunnablePlugin) => {
+    this._registry.getRenderablePlugins().forEach((plugin) => {
       plugin.update(ts, dt)
     })
     this._registry.getViews().forEach((view) => {
@@ -159,11 +159,15 @@ export class App {
   }
 
   private _render() {
-    this._registry.getPlugins().forEach((plugin: IRunnablePlugin) => {
+    this._registry.getRenderablePlugins().forEach((plugin) => {
       plugin.render()
     })
     this._registry.getViews().forEach((view) => {
       view.render()
     })
   }
+}
+
+export function createApp() {
+  return App.create()
 }

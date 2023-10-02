@@ -1,8 +1,14 @@
 // ************************************************************
 // ** Core
 // ************************************************************
-export { App } from './core/App'
-export { Plugin, type ChangedData, type IPluginContext } from './core/Plugin'
+export { createApp } from './core/App'
+export {
+  EventPlugin,
+  Plugin,
+  type ChangedData,
+  PluginContext,
+  type PluginFactory
+} from './core/Plugin'
 export { EventBus } from './core/EventBus'
 export { View } from './core/View'
 

@@ -1,5 +1,5 @@
 import { EventBus, Events } from '..'
-import { Plugin } from '../core/Plugin'
+import { EventPlugin } from '../core/Plugin'
 
 import { View } from '../core/View'
 import { Vec2 } from '../math/Vec2'
@@ -44,7 +44,9 @@ export class DragEvent {
   }
 }
 
-export class DragEventPlugin extends Plugin {
+export class DragEventPlugin extends EventPlugin {
+  static pluginName = 'DragEventPlugin'
+
   private _pointerX: number = 0
   private _pointerY: number = 0
   private _initialPointer: Vec2 = new Vec2(0, 0)
@@ -162,7 +164,6 @@ export class DragEventPlugin extends Plugin {
       isDragging,
       directions
     }
-    this.getEventBus().emitEvent(DragEvent, eventData)
     this.emit(DragEvent, eventData)
   }
 

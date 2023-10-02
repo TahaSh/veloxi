@@ -3,11 +3,11 @@ import './style.css'
 import {
   DragEvent,
   DragEventPlugin,
-  Plugin,
   View,
   ChangedData,
   Utils,
-  createApp
+  createApp,
+  PluginFactory
 } from '../../src'
 
 // ************************************************************
@@ -32,65 +32,64 @@ class ListSelectorHoveredEvent {
 // ** The plugin
 // ************************************************************
 
-class ListSelectorPlugin extends Plugin {
-  static pluginName = 'ListSelectorPlugin'
-  dragEventPlugin = this.useEventPlugin(DragEventPlugin)
+const ListSelectorPlugin: PluginFactory = (context) => {
+  const dragEventPlugin = context.useEventPlugin(DragEventPlugin)
 
-  selector!: View
+  let selector: View
 
-  setup(): void {
-    this.selector = this.getView('selector')!
+  context.setup(() => {
+    selector = context.getView('selector')!
 
-    this.dragEventPlugin.addView(this.selector)
-    this.dragEventPlugin.on(DragEvent, this.onDrag.bind(this))
+    dragEventPlugin.addView(selector)
+    dragEventPlugin.on(DragEvent, onDrag.bind(this))
 
-    this.selector.position.animator.set('spring')
+    selector.position.animator.set('spring')
 
-    this.updateSelectorPosition(false)
-  }
+    updateSelectorPosition(false)
+  })
 
-  updateSelectorPosition(animate: boolean = true) {
-    this.selector.position.set(
+  function updateSelectorPosition(animate: boolean = true) {
+    selector.position.set(
       {
-        x: this.selectedItem.position.x,
-        y: this.selectedItem.position.y
+        x: selectedItem().position.x,
+        y: selectedItem().position.y
       },
       animate
     )
 
-    this.updateItemSelectedState()
-    this.hoverItem()
+    updateItemSelectedState()
+    hoverItem()
   }
 
-  get items(): Array<View> {
-    return this.getViews('item')
+  function items(): Array<View> {
+    return context.getViews('item')
   }
 
-  onDataChanged(data: ChangedData): void {
+  context.onDataChanged((data: ChangedData) => {
     if (data.dataName === 'selectedItemId') {
-      this.updateSelectorPosition()
+      updateSelectorPosition()
     }
-  }
+  })
 
-  onViewRemoved(view: View): void {
+  context.onViewRemoved((view: View) => {
     const removedId = view.data.itemId
-    const currentId = this.selector.data.selectedItemId
+    const currentId = selector.data.selectedItemId
     if (currentId === removedId) {
-      const itemId = this.items[0].data.itemId
-      this.emit(ListSelectorUpdateEvent, { itemId })
+      const itemId = items()[0].data.itemId
+      context.emit(ListSelectorUpdateEvent, { itemId })
     }
-    this.updateSelectorPosition()
-  }
+    updateSelectorPosition()
+  })
 
-  updateItemSelectedState() {
-    this.items.forEach((item) => {
+  function updateItemSelectedState() {
+    items().forEach((item) => {
       item.element.dataset.isSelected = 'false'
     })
-    this.selectedItem.element.dataset.isSelected = 'true'
+    selectedItem().element.dataset.isSelected = 'true'
   }
 
-  hoverItem(item?: View) {
-    this.items.forEach((item) => {
+  function hoverItem(item?: View) {
+    items().forEach((item) => {
       item.element.dataset.isHovered = 'false'
     })
     if (item) {
@@ -98,40 +97,44 @@ class ListSelectorPlugin extends Plugin {
     }
   }
 
-  onDrag(dragState: DragEvent) {
+  function onDrag(dragState: DragEvent) {
     if (dragState.isDragging) {
       document.body.classList.add('is-dragging')
-      this.selector.position.set({
+      selector.position.set({
         y: Utils.clamp(
           dragState.y,
-          this.items[0].position.y,
-          this.items[this.items.length - 1].position.y
+          items()[0].position.y,
+          items()[items().length - 1].position.y
         )
       })
-      const closestItem = this.getClosestItemToSelector()
-      this.hoverItem(closestItem)
+      const closestItem = getClosestItemToSelector()
+      hoverItem(closestItem)
 
-      if (closestItem !== this.selectedItem) {
-        this.emit(ListSelectorHoveredEvent, { itemId: closestItem.data.itemId })
+      if (closestItem !== selectedItem()) {
+        context.emit(ListSelectorHoveredEvent, {
+          itemId: closestItem.data.itemId
+        })
       }
     } else {
       document.body.classList.remove('is-dragging')
-      const closestItem = this.getClosestItemToSelector()
-      if (closestItem !== this.selectedItem) {
-        this.emit(ListSelectorUpdateEvent, { itemId: closestItem.data.itemId })
+      const closestItem = getClosestItemToSelector()
+      if (closestItem !== selectedItem()) {
+        context.emit(ListSelectorUpdateEvent, {
+          itemId: closestItem.data.itemId
+        })
       } else {
-        this.selector.position.set({
-          y: this.selectedItem.position.y
+        selector.position.set({
+          y: selectedItem().position.y
         })
       }
     }
   }
 
-  getClosestItemToSelector(): View {
-    let closestItem = this.selectedItem || this.items[0]
-    let closestItemDistance = this.selector.distanceTo(closestItem)
-    this.items.forEach((item) => {
-      const distance = this.selector.distanceTo(item)
+  function getClosestItemToSelector(): View {
+    let closestItem = selectedItem() || items()[0]
+    let closestItemDistance = selector.distanceTo(closestItem)
+    items().forEach((item) => {
+      const distance = selector.distanceTo(item)
       if (distance < closestItemDistance) {
         closestItem = item
         closestItemDistance = distance
@@ -140,17 +143,17 @@ class ListSelectorPlugin extends Plugin {
     return closestItem
   }
 
-  get selectedItem(): View {
-    const currentId = this.selector.data.selectedItemId
-    const selectedItem = this.items.find(
-      (item) => item.data.itemId === currentId
-    )
+  function selectedItem(): View {
+    const currentId = selector.data.selectedItemId
+    const selectedItem = items().find((item) => item.data.itemId === currentId)
     if (!selectedItem) {
-      return this.items[0]
+      return items()[0]
     }
     return selectedItem
   }
 }
+
+ListSelectorPlugin.pluginName = 'ListSelectorPlugin'
 
 // ************************************************************
 // ** Create the app, install the plugin, and run the app

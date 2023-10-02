@@ -1,17 +1,21 @@
 import './style.css'
 
 import {
-  App,
   DragEvent,
   DragEventPlugin,
-  IPluginContext,
   View,
-  Size
+  Size,
+  PluginFactory,
+  createApp
 } from '../../src'
 
-function ResizePlugin(context: IPluginContext) {
+interface ResizeConfig {
+  maxWidth?: number
+}
+
+const ResizePlugin: PluginFactory<ResizeConfig> = (context) => {
   let resizable: View
-  const dragPlugin = context.usePlugin(DragEventPlugin)
+  const dragPlugin = context.useEventPlugin(DragEventPlugin)
 
   context.setup(() => {
     resizable = context.getView('resizable')!
@@ -29,8 +33,11 @@ function ResizePlugin(context: IPluginContext) {
             height: resizable.size.initialHeight
           }
         }
+        const newWidth = initialSize.width + drag.width
+        const maxWidth = context.config.maxWidth
         resizable.size.set({
-          width: initialSize.width + drag.width,
+          width:
+            maxWidth !== undefined && newWidth > maxWidth ? maxWidth : newWidth,
           height: initialSize.height + drag.height
         })
       } else {
@@ -40,9 +47,10 @@ function ResizePlugin(context: IPluginContext) {
   })
 }
 
+ResizePlugin.pluginName = 'ResizePlugin'
 ResizePlugin.scope = 'resizable'
 
-const app = App.create()
-app.addPlugin(ResizePlugin)
+const app = createApp()
+app.addPlugin(ResizePlugin, { maxWidth: 500 })
 
 app.run()

@@ -1,15 +1,10 @@
 import './style.css'
 
-import {
-  App,
-  View,
-  DragEvent,
-  DragEventPlugin,
-  IPluginContext
-} from '../../src'
+import { View, DragEvent, DragEventPlugin, createApp } from '../../src'
+import { PluginFactory } from '../../src/core/Plugin'
 
-function DragPlugin(context: IPluginContext) {
-  const dragEventPlugin = context.usePlugin(DragEventPlugin)
+const DragPlugin: PluginFactory = (context) => {
+  const dragEventPlugin = context.useEventPlugin(DragEventPlugin)
 
   let draggable: View
 
@@ -40,8 +35,9 @@ function DragPlugin(context: IPluginContext) {
 }
 
 DragPlugin.scope = 'draggable'
+DragPlugin.pluginName = 'DragPlugin'
 
-const app = App.create()
-app.addPlugin(DragPlugin)
+const app = createApp()
+app.addPlugin(DragPlugin as PluginFactory)
 
 app.run()

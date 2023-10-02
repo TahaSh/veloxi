@@ -1,11 +1,8 @@
+import { EventBus, View } from '..'
 import { getUniqueId } from '../utils/uniqueId'
-import { EventBus } from './EventBus'
 import { Registry } from './Registry'
-import { View } from './View'
 
-type ViewName = string
-
-type PluginCtorInfo = { pluginName?: string; scope?: ViewName }
+export type PluginConfig = Record<string, any>
 
 export interface ChangedData {
   dataName: string
@@ -13,367 +10,278 @@ export interface ChangedData {
   viewName: string
 }
 
-export type PluginConfig = Record<string, any>
-type PluginClassConstructor<TConfig extends PluginConfig> = new (
-  id: string,
-  context: PluginContext<TConfig>,
-  publicPlugin: PublicPlugin<TConfig>,
+// ************************************************************
+// ** Plugin Factory Types
+// ************************************************************
+
+interface PluginFactoryStaticFields {
   pluginName: string
-) => Plugin<TConfig>
-type PluginFunctionConstructor<TConfig extends PluginConfig> = (
-  context: PluginContext<TConfig>,
-  config: TConfig
-) => void
-export type PluginFactory<TConfig extends PluginConfig = {}> = (
-  | PluginClassConstructor<TConfig>
-  | PluginFunctionConstructor<TConfig>
-) &
-  PluginCtorInfo
-
-export interface IPluginRegistry {
-  readonly id: string
+  scope?: string
 }
 
-export interface IRunnablePlugin {
-  render(): void
-  renderViews(): void
-  update(ts: number, dt: number): void
-  init(): void
-  subscribeToEvents(eventBus: EventBus): void
+interface PluginClassFactory<TConfig extends PluginConfig = PluginConfig>
+  extends PluginFactoryStaticFields {
+  new (
+    pluginName: string,
+    registry: Registry,
+    eventBus: EventBus,
+    config: TConfig
+  ): IPlugin<TConfig>
 }
 
-export interface IPublicPlugin extends IPluginRegistry {
-  addView(view: View, props?: { notify: boolean }): void
-  on<TEvent>(
-    EventCtor: new (eventData: TEvent) => TEvent,
-    listener: (eventData: TEvent) => void
-  ): void
-  setParentPluginContext(pluginContext: IPluginContext): void
+interface PluginFunctionFactory<TConfig extends PluginConfig = PluginConfig>
+  extends PluginFactoryStaticFields {
+  (context: PluginContext<TConfig>): void
 }
 
-interface IPluginAccessors extends IPluginRegistry {
-  getViews(name?: string): Array<View>
-  getView(name: string): View | undefined
-  getViewById(id: string): View | undefined
-  getConfig(): Readonly<PluginConfig>
-  emit<TEvent>(
-    EventCtor: new (eventData: TEvent) => TEvent,
-    eventData: TEvent
-  ): void
-  usePlugin<TConfig extends PluginConfig>(
-    PluginCtor: PluginFactory<TConfig>,
-    config?: TConfig
-  ): IPublicPlugin
-  getEventBus(): EventBus
-}
+export type PluginFactory<TConfig extends PluginConfig = PluginConfig> =
+  | PluginClassFactory<TConfig>
+  | PluginFunctionFactory<TConfig>
 
-export interface IPluginContext extends IPluginAccessors {
-  setup(callback: () => void): void
-  update(callback: (ts: number, dt: number) => void): void
-  render(callback: () => void): void
-  subscribeToEvents(callback: (eventBus: EventBus) => void): void
-  onViewAdded(callback: (view: View) => void): void
-  onViewRemoved(callback: (view: View) => void): void
-  onDataChanged(callback: (data: ChangedData) => void): void
-}
+// ************************************************************
+// ** Plugin
+// ************************************************************
 
-interface IPlugin extends IPluginAccessors, IRunnablePlugin, IPublicPlugin {
-  pluginName: string
-  setup(): void
-  update(ts: number, dt: number): void
-  render(): void
-  subscribeToEvents(eventBus: EventBus): void
-  onViewAdded(view: View): void
-  onViewRemoved(view: View): void
-  onDataChanged(callback: (data: ChangedData) => void): void
-}
-
-class PluginContext<TConfig extends PluginConfig> implements IPluginContext {
-  readonly id: string
-  parentPlugin?: IPublicPlugin
-  private readonly _registry: Registry
-  private readonly _eventBus: EventBus
+export abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
+  private _registry: Registry
+  private _eventBus: EventBus
+  private _internalEventBus: EventBus
+  private _initialized = false
   private readonly _config: TConfig
-  private readonly _internalEventBus: EventBus
-  private _setupCallback?: () => void
-  private _updateCallback?: (ts: number, dt: number) => void
-  private _renderCallback?: () => void
-  private _subscribeToEventsCallback?: (eventBus: EventBus) => void
-  private _onViewAddedCallback?: (view: View) => void
-  private _onViewRemovedCallback?: (view: View) => void
-  private _onDataChangedCallback?: (data: ChangedData) => void
+  private readonly _pluginName: string
+  private readonly _id: string
 
   constructor(
-    id: string,
+    pluginName: string,
     registry: Registry,
     eventBus: EventBus,
     config: TConfig
   ) {
-    this.id = id
+    this._id = getUniqueId()
+    this._pluginName = pluginName
     this._registry = registry
     this._eventBus = eventBus
-    this._config = config
     this._internalEventBus = new EventBus()
+    this._config = config
   }
 
-  get internalEventBus(): EventBus {
-    return this._internalEventBus
+  get pluginName() {
+    return this._pluginName
   }
 
-  setup(callback: () => void): void {
-    this._setupCallback = callback
-  }
-  callSetup() {
-    this._setupCallback?.()
+  get id() {
+    return this._id
   }
 
-  update(callback: (ts: number, dt: number) => void): void {
-    this._updateCallback = callback
-  }
-  callUpdate(ts: number, dt: number) {
-    this._updateCallback?.(ts, dt)
+  get config(): TConfig {
+    return { ...this._config }
   }
 
-  render(callback: () => void): void {
-    this._renderCallback = callback
-  }
-  callRender() {
-    this._renderCallback?.()
+  getViews(viewName?: string): Array<View> {
+    if (!viewName) return this._registry.getViewsForPlugin(this)
+
+    return this._registry.getViewsByNameForPlugin(this, viewName)
   }
 
-  subscribeToEvents(callback: (eventBus: EventBus) => void): void {
-    this._subscribeToEventsCallback = callback
-  }
-  callSubscribeToEvents(eventBus: EventBus): void {
-    this._subscribeToEventsCallback?.(eventBus)
+  getView(viewName?: string): View | undefined {
+    if (!viewName) return this._registry.getViewsForPlugin(this)[0]
+
+    const views = this._registry.getViewsByNameForPlugin(this, viewName)
+    return views[0]
   }
 
-  onViewAdded(callback: (view: View) => void): void {
-    this._onViewAddedCallback = callback
-  }
-  callOnViewAdded(view: View): void {
-    this._onViewAddedCallback?.(view)
+  addView(view: View) {
+    this._registry.addViewToPlugin(view, this)
   }
 
-  onViewRemoved(callback: (view: View) => void): void {
-    this._onViewRemovedCallback = callback
-  }
-  callOnViewRemoved(view: View): void {
-    this._onViewRemovedCallback?.(view)
-  }
-
-  onDataChanged(callback: (data: ChangedData) => void): void {
-    this._onDataChangedCallback = callback
-  }
-  callOnDataChanged(data: ChangedData): void {
-    this._onDataChangedCallback?.(data)
+  emit<TEvent>(
+    eventCtor: new (eventData: TEvent) => TEvent,
+    eventData: TEvent
+  ): void {
+    this._internalEventBus.emitEvent(eventCtor, eventData)
   }
 
-  usePlugin<TConfig extends PluginConfig>(
-    PluginCtor: PluginClassConstructor<TConfig>,
+  on<TEvent>(
+    eventCtor: new (eventData: TEvent) => TEvent,
+    listener: (eventData: TEvent) => void
+  ) {
+    this._internalEventBus.subscribeToEvent(eventCtor, listener)
+  }
+
+  useEventPlugin<TConfig extends PluginConfig>(
+    pluginFactory: PluginFactory<TConfig>,
     config: TConfig = {} as TConfig
-  ): IPublicPlugin {
-    const plugin = this._registry.createPlugin(
-      PluginCtor,
+  ): EventPlugin {
+    const plugin = this._registry.createPlugin<TConfig>(
+      pluginFactory,
       this._eventBus,
       config
     )
-    plugin.setParentPluginContext(this)
-    // this.parentPlugin = plugin
     return plugin
   }
 
-  getViews(name?: string): Array<View> {
-    if (name) {
-      return this._registry.getViewsForPluginByName(
-        this as IPluginRegistry,
-        name
-      )
+  notifyAboutDataChanged(data: ChangedData) {
+    this.onDataChanged(data)
+  }
+
+  // @ts-ignore
+  onDataChanged(data: ChangedData) {}
+
+  notifyAboutViewRemoved(view: View) {
+    this.onViewRemoved(view)
+  }
+
+  // @ts-ignore
+  onViewRemoved(view: View) {}
+
+  notifyAboutViewAdded(view: View) {
+    this.onViewAdded(view)
+  }
+
+  // @ts-ignore
+  onViewAdded(view: View) {}
+
+  init() {
+    if (!this._initialized) {
+      this.setup()
+      this._initialized = true
     }
-    return this._registry.getViewsForPlugin(this)
   }
 
-  getView(name: string): View | undefined {
-    return this._registry.getViewsForPluginByName(this, name)?.[0]
-  }
+  setup(): void {}
 
-  getViewById(id: string): View | undefined {
-    return this._registry.getViews().find((view) => view.id === id)
-  }
+  // @ts-ignore
+  subscribeToEvents(eventBus: EventBus) {}
 
-  getConfig(): Readonly<TConfig> {
-    return this._config
-  }
-
-  getEventBus(): EventBus {
-    return this._eventBus
-  }
-
-  emit<TEvent>(
-    EventCtor: new (eventData: TEvent) => TEvent,
-    eventData: TEvent
-  ): void {
-    this._internalEventBus.emitEvent(EventCtor, eventData)
-  }
+  abstract isRenderable(): boolean
 }
 
-class PublicPlugin<TConfig extends PluginConfig> implements IPublicPlugin {
-  readonly id: string
-  parentContext?: IPluginContext
-  private readonly _registry: Registry
-  private readonly _internalEventBus: EventBus
-  private readonly _context: PluginContext<TConfig>
-  constructor(context: PluginContext<TConfig>, registry: Registry) {
-    this._registry = registry
-    this._internalEventBus = context.internalEventBus
-    this.id = context.id
-    this._context = context
+export class Plugin<
+  TConfig extends PluginConfig = PluginConfig
+> extends IPlugin<TConfig> {
+  isRenderable(): boolean {
+    return true
   }
-  setParentPluginContext(pluginContext: IPluginContext): void {
-    this.parentContext = pluginContext
-  }
-  addView(view: View, { notify } = { notify: false }): void {
-    this._registry.addViewToPlugin(view, this as IPluginRegistry)
+  // @ts-ignore
+  update(ts: number, dt: number) {}
+
+  render() {}
+
+  addView(view: View): void {
     view.setPluginId(this.id)
-    if (notify) {
-      this._context.callOnViewAdded(view)
-    }
-  }
-  on<TEvent>(
-    EventCtor: new (eventData: TEvent) => TEvent,
-    listener: (eventData: TEvent) => void
-  ): void {
-    this._internalEventBus.subscribeToEvent(EventCtor, listener)
+    super.addView(view)
   }
 }
 
-export class Plugin<TConfig extends PluginConfig = PluginConfig>
-  implements IPlugin
-{
-  readonly id: string
-  readonly pluginName: string
-  private _context: PluginContext<TConfig>
-  private _public: PublicPlugin<TConfig>
-  private _initialized: boolean = false
-  constructor(
-    id: string,
-    context: PluginContext<TConfig>,
-    publicPlugin: PublicPlugin<TConfig>,
-    pluginName: string
-  ) {
-    this.id = id
-    this._context = context
-    this._context.setup(this.setup)
-    this._context.render(this.render)
-    this._context.update(this.update)
-    this._context.subscribeToEvents(this.subscribeToEvents)
-    this._public = publicPlugin
-    this.pluginName = pluginName
+export class EventPlugin<
+  TConfig extends PluginConfig = PluginConfig
+> extends IPlugin<TConfig> {
+  isRenderable(): boolean {
+    return false
   }
-  get parentPluginId(): string | undefined {
-    return this._public.parentContext?.id
+}
+
+// ************************************************************
+// ** Plugin Context
+// ************************************************************
+
+export class PluginContext<TConfig extends PluginConfig = PluginConfig> {
+  private _plugin: Plugin<TConfig>
+
+  constructor(plugin: Plugin<TConfig>) {
+    this._plugin = plugin
   }
-  get publicPlugin() {
-    return this._public
+
+  get config(): TConfig {
+    return this._plugin.config
   }
-  getEventBus(): EventBus {
-    return this._context.getEventBus()
+
+  setup(callback: () => void) {
+    this._plugin.setup = callback
   }
-  usePlugin<TConfig extends PluginConfig>(
-    PluginCtor: PluginClassConstructor<TConfig>,
+
+  update(callback: (ts: number, dt: number) => void) {
+    this._plugin.update = callback
+  }
+
+  render(callback: () => void) {
+    this._plugin.render = callback
+  }
+
+  getViews(viewName: string): Array<View> {
+    return this._plugin.getViews(viewName)
+  }
+
+  getView(viewName: string): View | undefined {
+    return this._plugin.getView(viewName)
+  }
+
+  useEventPlugin<TConfig extends PluginConfig>(
+    pluginFactory: PluginFactory<TConfig>,
     config: TConfig = {} as TConfig
-  ): IPublicPlugin {
-    return this._context.usePlugin(PluginCtor, config)
+  ) {
+    return this._plugin.useEventPlugin(pluginFactory, config)
   }
-  render(): void {
-    this._context?.callRender()
-  }
-  renderViews(): void {
-    this._context.getViews().forEach((view) => view.render())
-  }
-  init(): void {
-    if (this._initialized) return
-    this.setup()
-    this._initialized = true
-  }
-  setup(): void {
-    this._context?.callSetup()
-  }
-  update(ts: number, dt: number): void {
-    this._context?.callUpdate(ts, dt)
-  }
-  subscribeToEvents(eventBus: EventBus): void {
-    this._context?.callSubscribeToEvents(eventBus)
-  }
-  // @ts-ignore
-  onViewAdded(view: View): void {}
-  // @ts-ignore
-  onViewRemoved(view: View): void {}
-  // @ts-ignore
-  onDataChanged(data: ChangedData): void {}
-  notifyAboutViewRemoved(view: View): void {
-    this._context.callOnViewRemoved(view)
-  }
-  notifyAboutDataChanged(data: ChangedData): void {
-    this._context.callOnDataChanged(data)
-  }
-  getViews(name?: string | undefined): View[] {
-    return this._context.getViews(name)
-  }
-  getView(name: string): View | undefined {
-    return this._context.getView(name)
-  }
-  getViewById(id: string): View | undefined {
-    return this._context.getViewById(id)
-  }
-  getConfig(): Readonly<PluginConfig> {
-    return this._context.getConfig()
-  }
-  addView(view: View, props: { notify: boolean } = { notify: true }): void {
-    this._public.addView(view, { notify: props.notify })
-  }
+
   emit<TEvent>(
-    EventCtor: new (eventData: TEvent) => TEvent,
+    eventCtor: new (eventData: TEvent) => TEvent,
     eventData: TEvent
   ): void {
-    this._context.emit(EventCtor, eventData)
+    this._plugin.emit(eventCtor, eventData)
   }
+
   on<TEvent>(
-    EventCtor: new (eventData: TEvent) => TEvent,
+    eventCtor: new (eventData: TEvent) => TEvent,
     listener: (eventData: TEvent) => void
-  ): void {
-    this._public.on(EventCtor, listener)
+  ) {
+    this._plugin.on(eventCtor, listener)
+  }
+
+  onDataChanged(callback: (data: ChangedData) => void) {
+    this._plugin.onDataChanged = callback
+  }
+
+  onViewRemoved(callback: (view: View) => void) {
+    this._plugin.onViewRemoved = callback
+  }
+
+  onViewAdded(callback: (view: View) => void) {
+    this._plugin.onViewAdded = callback
   }
 }
 
-function isPluginClassConstructor<TConfig extends PluginConfig = PluginConfig>(
-  constructor: PluginFactory<TConfig>
-): constructor is PluginClassConstructor<TConfig> {
-  if (typeof constructor === 'function' && constructor.name === '') return false
-  return constructor.prototype.constructor.toString().indexOf('class ') === 0
-}
+// ************************************************************
+// ** Plugin Factory
+// ************************************************************
 
 export function createPlugin<TConfig extends PluginConfig>(
   pluginFactory: PluginFactory<TConfig>,
   registry: Registry,
   eventBus: EventBus,
   config: TConfig
-): Plugin<TConfig> {
-  const id = getUniqueId()
-  const context = new PluginContext<TConfig>(id, registry, eventBus, config)
-  const publicPlugin = new PublicPlugin(context, registry)
-  const pluginName = !pluginFactory.pluginName
-    ? pluginFactory.name
-    : pluginFactory.pluginName
-  if (isPluginClassConstructor(pluginFactory)) {
-    const plugin = new pluginFactory(id, context, publicPlugin, pluginName)
-    context.onViewAdded(plugin.onViewAdded.bind(plugin))
-    context.onViewRemoved(plugin.onViewRemoved.bind(plugin))
-    context.onDataChanged(plugin.onDataChanged.bind(plugin))
-    return plugin
+): IPlugin<TConfig> {
+  if (isClassConstructor(pluginFactory)) {
+    return new pluginFactory(
+      pluginFactory.pluginName,
+      registry,
+      eventBus,
+      config
+    )
   }
 
-  const plugin = new Plugin<TConfig>(id, context, publicPlugin, pluginName)
-  pluginFactory(context, config)
+  const plugin = new Plugin(
+    pluginFactory.pluginName,
+    registry,
+    eventBus,
+    config
+  )
+  const context = new PluginContext(plugin)
+  pluginFactory(context)
   return plugin
+}
+
+function isClassConstructor<TConfig extends PluginConfig>(
+  pluginFactory: PluginFactory<TConfig>
+): pluginFactory is PluginClassFactory<TConfig> {
+  return pluginFactory.prototype?.constructor.toString().indexOf('class ') === 0
 }

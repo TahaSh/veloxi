@@ -39,14 +39,14 @@ declare interface AnimatorUpdateData<TValue> {
     dt: number;
 }
 
-export declare class App {
+declare class App {
     private _previousTime;
     private readonly _registry;
     private readonly _eventBus;
     static create(): App;
     constructor();
-    addPlugin<TConfig extends PluginConfig>(PluginCtor: PluginFactory<TConfig>, config?: TConfig): void;
-    onPluginEvent<TEvent>(PluginCtor: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
+    addPlugin<TConfig extends PluginConfig = PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): void;
+    onPluginEvent<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     run(): void;
     private _setup;
     private _listenToNativeEvents;
@@ -69,6 +69,8 @@ export declare interface ChangedData {
 declare function clamp(num: number, min: number, max: number): number;
 
 declare type CompleteCallback = () => void;
+
+export declare function createApp(): App;
 
 export declare class DataChangedEvent implements DataEvent {
     event: DataEvent;
@@ -130,7 +132,8 @@ declare class DragEvent_2 {
 }
 export { DragEvent_2 as DragEvent }
 
-export declare class DragEventPlugin extends Plugin_2 {
+export declare class DragEventPlugin extends EventPlugin {
+    static pluginName: string;
     private _pointerX;
     private _pointerY;
     private _initialPointer;
@@ -163,6 +166,10 @@ export declare class EventBus {
     reset(): void;
 }
 
+export declare class EventPlugin<TConfig extends PluginConfig = PluginConfig> extends IPlugin<TConfig> {
+    isRenderable(): boolean;
+}
+
 declare namespace Events {
     export {
         PointerClickEvent,
@@ -178,55 +185,34 @@ declare class InstantAnimator<TValue> implements Animator<TValue> {
     update(data: AnimatorUpdateData<TValue>): TValue;
 }
 
-declare interface IPlugin extends IPluginAccessors, IRunnablePlugin, IPublicPlugin {
-    pluginName: string;
-    setup(): void;
-    update(ts: number, dt: number): void;
-    render(): void;
-    subscribeToEvents(eventBus: EventBus): void;
-    onViewAdded(view: View): void;
+declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
+    private _registry;
+    private _eventBus;
+    private _internalEventBus;
+    private _initialized;
+    private readonly _config;
+    private readonly _pluginName;
+    private readonly _id;
+    constructor(pluginName: string, registry: Registry, eventBus: EventBus, config: TConfig);
+    get pluginName(): string;
+    get id(): string;
+    get config(): TConfig;
+    getViews(viewName?: string): Array<View>;
+    getView(viewName?: string): View | undefined;
+    addView(view: View): void;
+    emit<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
+    on<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
+    useEventPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): EventPlugin;
+    notifyAboutDataChanged(data: ChangedData): void;
+    onDataChanged(data: ChangedData): void;
+    notifyAboutViewRemoved(view: View): void;
     onViewRemoved(view: View): void;
-    onDataChanged(callback: (data: ChangedData) => void): void;
-}
-
-declare interface IPluginAccessors extends IPluginRegistry {
-    getViews(name?: string): Array<View>;
-    getView(name: string): View | undefined;
-    getViewById(id: string): View | undefined;
-    getConfig(): Readonly<PluginConfig>;
-    emit<TEvent>(EventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
-    usePlugin<TConfig extends PluginConfig>(PluginCtor: PluginFactory<TConfig>, config?: TConfig): IPublicPlugin;
-    getEventBus(): EventBus;
-}
-
-export declare interface IPluginContext extends IPluginAccessors {
-    setup(callback: () => void): void;
-    update(callback: (ts: number, dt: number) => void): void;
-    render(callback: () => void): void;
-    subscribeToEvents(callback: (eventBus: EventBus) => void): void;
-    onViewAdded(callback: (view: View) => void): void;
-    onViewRemoved(callback: (view: View) => void): void;
-    onDataChanged(callback: (data: ChangedData) => void): void;
-}
-
-declare interface IPluginRegistry {
-    readonly id: string;
-}
-
-declare interface IPublicPlugin extends IPluginRegistry {
-    addView(view: View, props?: {
-        notify: boolean;
-    }): void;
-    on<TEvent>(EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
-    setParentPluginContext(pluginContext: IPluginContext): void;
-}
-
-declare interface IRunnablePlugin {
-    render(): void;
-    renderViews(): void;
-    update(ts: number, dt: number): void;
+    notifyAboutViewAdded(view: View): void;
+    onViewAdded(view: View): void;
     init(): void;
+    setup(): void;
     subscribeToEvents(eventBus: EventBus): void;
+    abstract isRenderable(): boolean;
 }
 
 declare interface IViewProp {
@@ -239,91 +225,47 @@ declare interface IViewProp {
 
 declare function minBy<T>(items: Array<T>, predicate: (item: T) => number): T;
 
-declare class Plugin_2<TConfig extends PluginConfig = PluginConfig> implements IPlugin {
-    readonly id: string;
-    readonly pluginName: string;
-    private _context;
-    private _public;
-    private _initialized;
-    constructor(id: string, context: PluginContext<TConfig>, publicPlugin: PublicPlugin<TConfig>, pluginName: string);
-    get parentPluginId(): string | undefined;
-    get publicPlugin(): PublicPlugin<TConfig>;
-    getEventBus(): EventBus;
-    usePlugin<TConfig extends PluginConfig>(PluginCtor: PluginClassConstructor<TConfig>, config?: TConfig): IPublicPlugin;
-    render(): void;
-    renderViews(): void;
-    init(): void;
-    setup(): void;
+declare class Plugin_2<TConfig extends PluginConfig = PluginConfig> extends IPlugin<TConfig> {
+    isRenderable(): boolean;
     update(ts: number, dt: number): void;
-    subscribeToEvents(eventBus: EventBus): void;
-    onViewAdded(view: View): void;
-    onViewRemoved(view: View): void;
-    onDataChanged(data: ChangedData): void;
-    notifyAboutViewRemoved(view: View): void;
-    notifyAboutDataChanged(data: ChangedData): void;
-    getViews(name?: string | undefined): View[];
-    getView(name: string): View | undefined;
-    getViewById(id: string): View | undefined;
-    getConfig(): Readonly<PluginConfig>;
-    addView(view: View, props?: {
-        notify: boolean;
-    }): void;
-    emit<TEvent>(EventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
-    on<TEvent>(EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
+    render(): void;
+    addView(view: View): void;
 }
 export { Plugin_2 as Plugin }
 
-declare type PluginClassConstructor<TConfig extends PluginConfig> = new (id: string, context: PluginContext<TConfig>, publicPlugin: PublicPlugin<TConfig>, pluginName: string) => Plugin_2<TConfig>;
+declare interface PluginClassFactory<TConfig extends PluginConfig = PluginConfig> extends PluginFactoryStaticFields {
+    new (pluginName: string, registry: Registry, eventBus: EventBus, config: TConfig): IPlugin<TConfig>;
+}
 
 declare type PluginConfig = Record<string, any>;
 
-declare class PluginContext<TConfig extends PluginConfig> implements IPluginContext {
-    readonly id: string;
-    parentPlugin?: IPublicPlugin;
-    private readonly _registry;
-    private readonly _eventBus;
-    private readonly _config;
-    private readonly _internalEventBus;
-    private _setupCallback?;
-    private _updateCallback?;
-    private _renderCallback?;
-    private _subscribeToEventsCallback?;
-    private _onViewAddedCallback?;
-    private _onViewRemovedCallback?;
-    private _onDataChangedCallback?;
-    constructor(id: string, registry: Registry, eventBus: EventBus, config: TConfig);
-    get internalEventBus(): EventBus;
+export declare class PluginContext<TConfig extends PluginConfig = PluginConfig> {
+    private _plugin;
+    constructor(plugin: Plugin_2<TConfig>);
+    get config(): TConfig;
     setup(callback: () => void): void;
-    callSetup(): void;
     update(callback: (ts: number, dt: number) => void): void;
-    callUpdate(ts: number, dt: number): void;
     render(callback: () => void): void;
-    callRender(): void;
-    subscribeToEvents(callback: (eventBus: EventBus) => void): void;
-    callSubscribeToEvents(eventBus: EventBus): void;
-    onViewAdded(callback: (view: View) => void): void;
-    callOnViewAdded(view: View): void;
-    onViewRemoved(callback: (view: View) => void): void;
-    callOnViewRemoved(view: View): void;
+    getViews(viewName: string): Array<View>;
+    getView(viewName: string): View | undefined;
+    useEventPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): EventPlugin<PluginConfig>;
+    emit<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
+    on<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     onDataChanged(callback: (data: ChangedData) => void): void;
-    callOnDataChanged(data: ChangedData): void;
-    usePlugin<TConfig extends PluginConfig>(PluginCtor: PluginClassConstructor<TConfig>, config?: TConfig): IPublicPlugin;
-    getViews(name?: string): Array<View>;
-    getView(name: string): View | undefined;
-    getViewById(id: string): View | undefined;
-    getConfig(): Readonly<TConfig>;
-    getEventBus(): EventBus;
-    emit<TEvent>(EventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
+    onViewRemoved(callback: (view: View) => void): void;
+    onViewAdded(callback: (view: View) => void): void;
 }
 
-declare type PluginCtorInfo = {
-    pluginName?: string;
-    scope?: ViewName;
-};
+export declare type PluginFactory<TConfig extends PluginConfig = PluginConfig> = PluginClassFactory<TConfig> | PluginFunctionFactory<TConfig>;
 
-declare type PluginFactory<TConfig extends PluginConfig = {}> = (PluginClassConstructor<TConfig> | PluginFunctionConstructor<TConfig>) & PluginCtorInfo;
+declare interface PluginFactoryStaticFields {
+    pluginName: string;
+    scope?: string;
+}
 
-declare type PluginFunctionConstructor<TConfig extends PluginConfig> = (context: PluginContext<TConfig>, config: TConfig) => void;
+declare interface PluginFunctionFactory<TConfig extends PluginConfig = PluginConfig> extends PluginFactoryStaticFields {
+    (context: PluginContext<TConfig>): void;
+}
 
 export declare type Point = {
     x: number;
@@ -367,20 +309,6 @@ declare class PositionProp extends ViewProp<Vec2> {
     isTransform(): boolean;
 }
 
-declare class PublicPlugin<TConfig extends PluginConfig> implements IPublicPlugin {
-    readonly id: string;
-    parentContext?: IPluginContext;
-    private readonly _registry;
-    private readonly _internalEventBus;
-    private readonly _context;
-    constructor(context: PluginContext<TConfig>, registry: Registry);
-    setParentPluginContext(pluginContext: IPluginContext): void;
-    addView(view: View, { notify }?: {
-        notify: boolean;
-    }): void;
-    on<TEvent>(EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
-}
-
 declare class Registry {
     private _plugins;
     private _views;
@@ -394,14 +322,15 @@ declare class Registry {
     queueNodeToBeCreated(domEl: HTMLElement): void;
     queueNodeToBeRemoved(domEl: HTMLElement): void;
     notifyPluginAboutDataChange(event: DataChangedEvent): void;
-    getPlugins(): ReadonlyArray<Plugin_2>;
-    getPluginByName(pluginName: string): Plugin_2 | undefined;
-    createPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, eventBus: EventBus, config?: TConfig): IPublicPlugin;
+    getPlugins(): ReadonlyArray<IPlugin>;
+    getRenderablePlugins(): ReadonlyArray<Plugin_2>;
+    getPluginByName(pluginName: string): IPlugin | undefined;
+    createPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, eventBus: EventBus, config?: TConfig): IPlugin<TConfig>;
     getViews(): ReadonlyArray<View>;
     createView(domEl: HTMLElement, name: string): View;
-    addViewToPlugin(view: View, plugin: IPluginRegistry): void;
-    getViewsForPlugin(plugin: IPluginRegistry): Array<View>;
-    getViewsForPluginByName(plugin: IPluginRegistry, name: string): Array<View>;
+    addViewToPlugin(view: View, plugin: IPlugin): void;
+    getViewsForPlugin(plugin: IPlugin): Array<View>;
+    getViewsByNameForPlugin(plugin: IPlugin, viewName: string): Array<View>;
 }
 
 declare class RotationProp extends ViewProp<number> {
@@ -468,7 +397,8 @@ export declare class SwipeEvent {
     });
 }
 
-export declare class SwipeEventPlugin extends Plugin_2 {
+export declare class SwipeEventPlugin extends EventPlugin {
+    static pluginName: string;
     private _viewIsPointerDownMap;
     private _viewPointerPositionLog;
     private _targetPerView;
@@ -520,7 +450,7 @@ declare class Vec2 {
 }
 
 export declare class View {
-    id: string;
+    readonly id: string;
     name: string;
     element: HTMLElement;
     styles: Partial<Record<keyof CSSStyleDeclaration, string>>;
@@ -548,8 +478,6 @@ export declare class View {
     private _getUserStyles;
     markAsAdded(): void;
 }
-
-declare type ViewName = string;
 
 declare abstract class ViewProp<TValue> implements IViewProp {
     protected _animatorProp: AnimatorProp;

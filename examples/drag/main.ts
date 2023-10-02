@@ -1,12 +1,13 @@
 import './style.css'
 
-import { App, Plugin, View } from '../../src'
+import { createApp, Plugin, View } from '../../src'
 import { DragEvent, DragEventPlugin } from '../../src'
 
 class DragPlugin extends Plugin {
+  static pluginName = 'DragPlugin'
   static scope = 'draggable'
 
-  private _dragEventPlugin = this.usePlugin(DragEventPlugin)
+  private _dragEventPlugin = this.useEventPlugin(DragEventPlugin)
 
   draggable!: View
 
@@ -36,7 +37,7 @@ class DragPlugin extends Plugin {
   }
 }
 
-const app = App.create()
+const app = createApp()
 app.addPlugin(DragPlugin)
 
 app.run()

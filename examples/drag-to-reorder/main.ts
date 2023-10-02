@@ -1,10 +1,12 @@
 import './style.css'
 
-import { App, Plugin, View } from '../../src'
+import { Plugin, View, createApp } from '../../src'
 import { DragEvent, DragEventPlugin } from '../../src'
 
 class DragToReorderPlugin extends Plugin {
-  dragEventPlugin = this.usePlugin(DragEventPlugin)
+  static pluginName = 'DragToReorderPlugin'
+
+  dragEventPlugin = this.useEventPlugin(DragEventPlugin)
 
   items!: Array<View>
 
@@ -92,7 +94,7 @@ class DragToReorderPlugin extends Plugin {
   }
 }
 
-const app = App.create()
+const app = createApp()
 app.addPlugin(DragToReorderPlugin)
 
 app.run()

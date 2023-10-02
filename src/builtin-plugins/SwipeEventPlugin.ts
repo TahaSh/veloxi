@@ -1,4 +1,4 @@
-import { type EventBus, Plugin, Events } from '..'
+import { type EventBus, EventPlugin, Events } from '..'
 import { View } from '../core/View'
 import { Vec2 } from '../math/Vec2'
 
@@ -13,7 +13,9 @@ export class SwipeEvent {
   }
 }
 
-export class SwipeEventPlugin extends Plugin {
+export class SwipeEventPlugin extends EventPlugin {
+  static pluginName = 'SwipeEventPlugin'
+
   private _viewIsPointerDownMap: Map<string, boolean> = new Map()
   private _viewPointerPositionLog: Map<string, Array<Vec2>> = new Map()
   private _targetPerView: Map<string, EventTarget | null> = new Map()
@@ -64,10 +66,6 @@ export class SwipeEventPlugin extends Plugin {
           view.hasElement(target as HTMLElement) &&
           swipeData.hasSwiped
         ) {
-          this.getEventBus().emitEvent(SwipeEvent, {
-            view,
-            direction: swipeData.direction
-          })
           this.emit(SwipeEvent, {
             view,
             direction: swipeData.direction

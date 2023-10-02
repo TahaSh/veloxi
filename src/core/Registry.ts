@@ -1,11 +1,10 @@
 import { DataChangedEvent, EventBus } from '..'
 import {
-  Plugin,
   PluginConfig,
-  IPluginRegistry,
   createPlugin,
   type PluginFactory,
-  IPublicPlugin
+  IPlugin,
+  Plugin
 } from './Plugin'
 import { View } from './View'
 
@@ -13,7 +12,7 @@ type PluginId = string
 type ViewId = string
 
 export class Registry {
-  private _plugins: Array<Plugin> = []
+  private _plugins: Array<IPlugin> = []
   private _views: Array<View> = []
   private _viewsPerPlugin: Map<PluginId, Array<ViewId>> = new Map()
   private _viewsToBeCreated: Array<HTMLElement> = []
@@ -86,31 +85,28 @@ export class Registry {
     const plugins = this._plugins.filter(
       (plugin) => plugin.id === event.pluginId
     )
-    if (!plugins) return
+    if (!plugins || !plugins.length) return
     plugins.forEach((plugin) => {
       plugin.notifyAboutDataChanged({
         dataName: event.dataName,
         dataValue: event.dataValue,
         viewName: event.viewName
       })
-      const parentPlugin = this._plugins.find((aPlugin) => {
-        return aPlugin.id === plugin.parentPluginId
-      })
-      if (parentPlugin) {
-        parentPlugin.notifyAboutDataChanged({
-          dataName: event.dataName,
-          dataValue: event.dataValue,
-          viewName: event.viewName
-        })
-      }
     })
   }
 
-  getPlugins(): ReadonlyArray<Plugin> {
+  getPlugins(): ReadonlyArray<IPlugin> {
     return this._plugins
   }
 
-  getPluginByName(pluginName: string): Plugin | undefined {
+  getRenderablePlugins(): ReadonlyArray<Plugin> {
+    function isRenderable(plugin: IPlugin): plugin is Plugin {
+      return plugin.isRenderable()
+    }
+    return this._plugins.filter(isRenderable)
+  }
+
+  getPluginByName(pluginName: string): IPlugin | undefined {
     return this._plugins.find((plugin) => plugin.pluginName === pluginName)
   }
 
@@ -118,11 +114,16 @@ export class Registry {
     pluginFactory: PluginFactory<TConfig>,
     eventBus: EventBus,
     config: TConfig = {} as TConfig
-  ): IPublicPlugin {
+  ): IPlugin<TConfig> {
+    if (!pluginFactory.pluginName) {
+      throw Error(
+        `Plugin ${pluginFactory.name} must contain a pluginName field`
+      )
+    }
     let scopeRoots: Array<HTMLElement> = []
     if (pluginFactory.scope) {
       const domEls = document.querySelectorAll<HTMLElement>(
-        `[data-vel-plugin=${pluginFactory.name}][data-vel-view=${pluginFactory.scope}]`
+        `[data-vel-plugin=${pluginFactory.pluginName}][data-vel-view=${pluginFactory.scope}]`
       )
       if (domEls) {
         scopeRoots = Array.from(domEls)
@@ -133,7 +134,12 @@ export class Registry {
       scopeRoots = [document.documentElement]
     }
     const plugins = scopeRoots.map((rootEl) => {
-      const plugin = createPlugin(pluginFactory, this, eventBus, config)
+      const plugin = createPlugin<TConfig>(
+        pluginFactory,
+        this,
+        eventBus,
+        config
+      )
       this._plugins.push(plugin)
       let domEls: Array<HTMLElement> = []
       if (rootEl !== document.documentElement) {
@@ -148,21 +154,22 @@ export class Registry {
           const viewName = domEl.dataset.velView
           if (!viewName) return
           const view = this.createView(domEl, viewName)
-          plugin.addView(view, { notify: false })
+          plugin.addView(view)
+          plugin.notifyAboutViewAdded(view)
         })
       }
       return plugin
     })
 
     if (plugins && plugins.length > 0) {
-      return plugins[0].publicPlugin
+      return plugins[0]
     }
     const plugin = createPlugin(pluginFactory, this, eventBus, config)
     console.log(
       `%c WARNING: The plugin "${plugin.pluginName}" is created but there are no elements using it on the page`,
       'background: #885500'
     )
-    return plugin.publicPlugin
+    return plugin
   }
 
   getViews(): ReadonlyArray<View> {
@@ -176,7 +183,7 @@ export class Registry {
     return view
   }
 
-  addViewToPlugin(view: View, plugin: IPluginRegistry): void {
+  addViewToPlugin(view: View, plugin: IPlugin): void {
     if (!this._viewsPerPlugin.has(plugin.id)) {
       this._viewsPerPlugin.set(plugin.id, [])
     }
@@ -186,7 +193,7 @@ export class Registry {
     }
   }
 
-  getViewsForPlugin(plugin: IPluginRegistry): Array<View> {
+  getViewsForPlugin(plugin: IPlugin): Array<View> {
     const viewIds = this._viewsPerPlugin.get(plugin.id)
     if (!viewIds) {
       return []
@@ -197,7 +204,9 @@ export class Registry {
     return views
   }
 
-  getViewsForPluginByName(plugin: IPluginRegistry, name: string): Array<View> {
-    return this.getViewsForPlugin(plugin).filter((view) => view.name === name)
+  getViewsByNameForPlugin(plugin: IPlugin, viewName: string): Array<View> {
+    return this.getViewsForPlugin(plugin).filter(
+      (view) => view.name === viewName
+    )
   }
 }

@@ -1,9 +1,11 @@
 import './style.css'
 
-import { App, Plugin, Events } from '../../src'
+import { Plugin, Events, createApp } from '../../src'
 import type { EventBus } from '../../src'
 
 class FollowMousePlugin extends Plugin {
+  static pluginName = 'FollowMousePlugin'
+
   setup(): void {
     const box = this.getView('box')!
     box.position.setAnimator('dynamic', { speed: 20 })
@@ -19,7 +21,7 @@ class FollowMousePlugin extends Plugin {
   }
 }
 
-const app = App.create()
+const app = createApp()
 app.addPlugin(FollowMousePlugin)
 
 app.run()
