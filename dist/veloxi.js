@@ -260,6 +260,9 @@ class it {
   onViewAdded(t) {
     this._plugin.onViewAdded = t;
   }
+  subscribeToEvents(t) {
+    this._plugin.subscribeToEvents = t;
+  }
 }
 function N(o, t, e, i) {
   if (st(o))

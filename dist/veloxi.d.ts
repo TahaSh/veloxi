@@ -254,6 +254,7 @@ export declare class PluginContext<TConfig extends PluginConfig = PluginConfig> 
     onDataChanged(callback: (data: ChangedData) => void): void;
     onViewRemoved(callback: (view: View) => void): void;
     onViewAdded(callback: (view: View) => void): void;
+    subscribeToEvents(callback: (eventBus: EventBus) => void): void;
 }
 
 export declare type PluginFactory<TConfig extends PluginConfig = PluginConfig> = PluginClassFactory<TConfig> | PluginFunctionFactory<TConfig>;

@@ -248,6 +248,10 @@ export class PluginContext<TConfig extends PluginConfig = PluginConfig> {
   onViewAdded(callback: (view: View) => void) {
     this._plugin.onViewAdded = callback
   }
+
+  subscribeToEvents(callback: (eventBus: EventBus) => void) {
+    this._plugin.subscribeToEvents = callback
+  }
 }
 
 // ************************************************************
