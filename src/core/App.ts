@@ -45,10 +45,16 @@ class App {
   }
 
   run() {
-    document.addEventListener('DOMContentLoaded', () => {
-      this._setup()
-      requestAnimationFrame(this._tick.bind(this))
-    })
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', this._start.bind(this))
+    } else {
+      this._start()
+    }
+  }
+
+  private _start() {
+    this._setup()
+    requestAnimationFrame(this._tick.bind(this))
   }
 
   private _setup() {
