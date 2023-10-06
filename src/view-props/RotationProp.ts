@@ -4,7 +4,19 @@ export class RotationProp extends ViewProp<number> {
   private _unit = 'deg'
 
   get degrees() {
-    return this._currentValue
+    let value = this._currentValue
+    if (this._unit === 'rad') {
+      value = value * (180 / Math.PI)
+    }
+    return value
+  }
+
+  get radians() {
+    let value = this._currentValue
+    if (this._unit === 'deg') {
+      value = value * (Math.PI / 180)
+    }
+    return value
   }
 
   setDegrees(value: number, runAnimation: boolean = true) {

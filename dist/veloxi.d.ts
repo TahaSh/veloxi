@@ -338,6 +338,7 @@ declare class Registry {
 declare class RotationProp extends ViewProp<number> {
     private _unit;
     get degrees(): number;
+    get radians(): number;
     setDegrees(value: number, runAnimation?: boolean): void;
     setRadians(value: number, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;

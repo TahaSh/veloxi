@@ -110,7 +110,7 @@ class Q extends K {
     this._handler(e);
   }
 }
-class R {
+class I {
   constructor() {
     r(this, "_listeners", /* @__PURE__ */ new Map());
   }
@@ -129,7 +129,7 @@ class R {
   }
 }
 let tt = 0;
-function I() {
+function R() {
   return tt++ + "";
 }
 class M {
@@ -141,7 +141,7 @@ class M {
     r(this, "_config");
     r(this, "_pluginName");
     r(this, "_id");
-    this._id = I(), this._pluginName = t, this._registry = e, this._eventBus = i, this._internalEventBus = new R(), this._config = s;
+    this._id = R(), this._pluginName = t, this._registry = e, this._eventBus = i, this._internalEventBus = new I(), this._config = s;
   }
   get pluginName() {
     return this._pluginName;
@@ -659,7 +659,12 @@ class mt extends x {
     r(this, "_unit", "deg");
   }
   get degrees() {
-    return this._currentValue;
+    let e = this._currentValue;
+    return this._unit === "rad" && (e = e * (180 / Math.PI)), e;
+  }
+  get radians() {
+    let e = this._currentValue;
+    return this._unit === "deg" && (e = e * (Math.PI / 180)), e;
   }
   setDegrees(e, i = !0) {
     this._unit = "deg", this._setTarget(e, i);
@@ -820,7 +825,7 @@ class Vt {
     r(this, "styles", {});
     r(this, "_viewProps");
     r(this, "_rect");
-    this.id = I(), this.name = e, this.element = t, this._rect = D(this.element), this._viewProps = new yt(this), this.element.dataset.velViewId = this.id;
+    this.id = R(), this.name = e, this.element = t, this._rect = D(this.element), this._viewProps = new yt(this), this.element.dataset.velViewId = this.id;
   }
   get position() {
     return this._viewProps.position;
@@ -1032,7 +1037,7 @@ class C {
     r(this, "_previousTime", 0);
     r(this, "_registry");
     r(this, "_eventBus");
-    this._registry = new bt(), this._eventBus = new R(), new J(this._eventBus);
+    this._registry = new bt(), this._eventBus = new I(), new J(this._eventBus);
   }
   static create() {
     return new C();
@@ -1317,7 +1322,7 @@ export {
   S as DataChangedEvent,
   xt as DragEvent,
   Et as DragEventPlugin,
-  R as EventBus,
+  I as EventBus,
   L as EventPlugin,
   St as Events,
   et as Plugin,
