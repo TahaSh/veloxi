@@ -21,18 +21,12 @@ const ResizePlugin: PluginFactory<ResizeConfig> = (context) => {
     resizable = context.getView('resizable')!
     resizable.size.animator.set('spring')
     dragPlugin.addView(resizable)
-    let initialSize: Size | null = {
+    let initialSize: Size = {
       width: resizable.size.width,
       height: resizable.size.height
     }
     dragPlugin.on(DragEvent, (drag) => {
       if (drag.isDragging) {
-        if (!initialSize) {
-          initialSize = {
-            width: resizable.size.initialWidth,
-            height: resizable.size.initialHeight
-          }
-        }
         const newWidth = initialSize.width + drag.width
         const maxWidth = context.config.maxWidth
         resizable.size.set({
@@ -41,7 +35,10 @@ const ResizePlugin: PluginFactory<ResizeConfig> = (context) => {
           height: initialSize.height + drag.height
         })
       } else {
-        initialSize = null
+        initialSize = {
+          width: resizable.size.widthAfterScale,
+          height: resizable.size.heightAfterScale
+        }
       }
     })
   })

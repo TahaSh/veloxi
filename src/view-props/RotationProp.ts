@@ -28,7 +28,7 @@ export class RotationProp extends ViewProp<number> {
       animatorProp: this._animatorProp,
       current: this._currentValue,
       target: this._targetValue,
-      initial: this._initialValue,
+      initial: this._previousValue,
       ts,
       dt
     })

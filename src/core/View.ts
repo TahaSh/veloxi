@@ -94,9 +94,9 @@ export class View {
     }
     return (
       x >= position.x &&
-      x <= position.x + this.size.width &&
+      x <= position.x + this.size.widthAfterScale &&
       y >= position.y &&
-      y <= position.y + this.size.height
+      y <= position.y + this.size.heightAfterScale
     )
   }
 

@@ -11,12 +11,22 @@ export class SizeProp extends ViewProp<Vec2> {
     return this._currentValue.y
   }
 
+  get widthAfterScale() {
+    const scaleX = this._view.scale.x
+    return this._currentValue.x * scaleX
+  }
+
+  get heightAfterScale() {
+    const scaleY = this._view.scale.y
+    return this._currentValue.y * scaleY
+  }
+
   get initialWidth() {
-    return this._rect.size.width
+    return this._initialValue.x
   }
 
   get initialHeight() {
-    return this._rect.size.height
+    return this._initialValue.y
   }
 
   set(value: Partial<Size>, runAnimation: boolean = true) {
@@ -46,7 +56,7 @@ export class SizeProp extends ViewProp<Vec2> {
       animatorProp: this._animatorProp,
       current: this._currentValue,
       target: this._targetValue,
-      initial: this._initialValue,
+      initial: this._previousValue,
       ts,
       dt
     })

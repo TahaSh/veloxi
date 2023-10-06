@@ -48,6 +48,7 @@ declare class App {
     addPlugin<TConfig extends PluginConfig = PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): void;
     onPluginEvent<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     run(): void;
+    private _start;
     private _setup;
     private _listenToNativeEvents;
     private _tick;
@@ -364,6 +365,8 @@ export declare type Size = {
 declare class SizeProp extends ViewProp<Vec2> {
     get width(): number;
     get height(): number;
+    get widthAfterScale(): number;
+    get heightAfterScale(): number;
     get initialWidth(): number;
     get initialHeight(): number;
     set(value: Partial<Size>, runAnimation?: boolean): void;
@@ -484,10 +487,11 @@ declare abstract class ViewProp<TValue> implements IViewProp {
     protected _animatorProp: AnimatorProp;
     protected _animator: Animator<TValue>;
     protected _initialValue: TValue;
+    protected _previousValue: TValue;
     protected _targetValue: TValue;
     protected _currentValue: TValue;
     protected _hasChanged: boolean;
-    protected _parentView: View;
+    protected _view: View;
     protected _animatorFactory: AnimatorFactory<TValue>;
     constructor(animatorFactory: AnimatorFactory<TValue>, initialValue: TValue, parentView: View);
     get animator(): AnimatorProp;

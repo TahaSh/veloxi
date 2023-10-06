@@ -20,10 +20,11 @@ export abstract class ViewProp<TValue> implements IViewProp {
   protected _animatorProp: AnimatorProp
   protected _animator: Animator<TValue>
   protected _initialValue: TValue
+  protected _previousValue: TValue
   protected _targetValue: TValue
   protected _currentValue: TValue
   protected _hasChanged: boolean
-  protected _parentView: View
+  protected _view: View
   protected _animatorFactory: AnimatorFactory<TValue>
 
   constructor(
@@ -34,10 +35,11 @@ export abstract class ViewProp<TValue> implements IViewProp {
     this._animatorProp = new AnimatorProp(this)
     this._animatorFactory = animatorFactory
     this._initialValue = cloneValue(initialValue)
+    this._previousValue = cloneValue(initialValue)
     this._targetValue = cloneValue(initialValue)
     this._currentValue = cloneValue(initialValue)
     this._hasChanged = false
-    this._parentView = parentView
+    this._view = parentView
     this._animator = this._animatorFactory.createInstantAnimator()
   }
 
@@ -46,7 +48,7 @@ export abstract class ViewProp<TValue> implements IViewProp {
   }
 
   protected get _rect(): ViewRect {
-    return this._parentView.rect
+    return this._view.rect
   }
 
   setAnimator<TAnimatorName extends keyof AnimatorConfigMap>(
@@ -60,7 +62,7 @@ export abstract class ViewProp<TValue> implements IViewProp {
   }
 
   protected _setTarget(value: TValue, runAnimation: boolean = true): void {
-    this._initialValue = cloneValue(this._currentValue)
+    this._previousValue = cloneValue(this._currentValue)
     this._targetValue = value
     if (!runAnimation) {
       this._currentValue = value

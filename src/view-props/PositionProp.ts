@@ -63,7 +63,7 @@ export class PositionProp extends ViewProp<Vec2> {
       animatorProp: this._animatorProp,
       current: this._currentValue,
       target: this._targetValue,
-      initial: this._initialValue,
+      initial: this._previousValue,
       ts,
       dt
     })

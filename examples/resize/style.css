@@ -24,4 +24,5 @@
   border-radius: 10px;
   color: #222;
   width: 200px;
+  transform-origin: left top;
 }
