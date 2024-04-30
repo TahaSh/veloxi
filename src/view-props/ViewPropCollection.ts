@@ -1,6 +1,7 @@
 import { View } from '..'
 import { NumberAnimatorFactory, Vec2AnimatorFactory } from '../animators'
 import { Vec2 } from '../math'
+import { OpacityProp } from './OpacityProp'
 import { PositionProp } from './PositionProp'
 import { RotationProp } from './RotationProp'
 import { ScaleProp } from './ScaleProp'
@@ -33,6 +34,11 @@ export class ViewPropCollection {
         view
       )
     )
+
+    this._props.set(
+      'opacity',
+      new OpacityProp(new NumberAnimatorFactory(), 1, view)
+    )
   }
   allProps(): Array<IViewProp> {
     return Array.from(this._props.values())
@@ -48,5 +54,8 @@ export class ViewPropCollection {
   }
   get size(): SizeProp {
     return this._props.get('size') as SizeProp
+  }
+  get opacity(): OpacityProp {
+    return this._props.get('opacity') as OpacityProp
   }
 }

@@ -3,6 +3,7 @@ import { ViewRect, readRect } from '../utils/RectReader'
 import { toKebabCase } from '../utils/String'
 import { getUniqueId } from '../utils/uniqueId'
 import { ViewPropCollection } from '../view-props'
+import { OpacityProp } from '../view-props/OpacityProp'
 import { PositionProp } from '../view-props/PositionProp'
 import { RotationProp } from '../view-props/RotationProp'
 import { ScaleProp } from '../view-props/ScaleProp'
@@ -42,6 +43,10 @@ export class View {
 
   get size(): SizeProp {
     return this._viewProps.size
+  }
+
+  get opacity(): OpacityProp {
+    return this._viewProps.opacity
   }
 
   get data(): Record<string, string> {
