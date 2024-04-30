@@ -226,6 +226,15 @@ declare interface IViewProp {
 
 declare function minBy<T>(items: Array<T>, predicate: (item: T) => number): T;
 
+declare class OpacityProp extends ViewProp<number> {
+    get value(): number;
+    set(value: number, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
+    update(ts: number, dt: number): void;
+    projectStyles(): string;
+    isTransform(): boolean;
+}
+
 declare class Plugin_2<TConfig extends PluginConfig = PluginConfig> extends IPlugin<TConfig> {
     isRenderable(): boolean;
     update(ts: number, dt: number): void;
@@ -466,6 +475,7 @@ export declare class View {
     get scale(): ScaleProp;
     get rotation(): RotationProp;
     get size(): SizeProp;
+    get opacity(): OpacityProp;
     get data(): Record<string, string>;
     setPluginId(id: string): void;
     hasElement(element: HTMLElement): boolean;
