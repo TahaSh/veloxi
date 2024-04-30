@@ -96,7 +96,6 @@ export class DragEventPlugin extends EventPlugin {
           this._pointerDownPerView.set(view.id, false)
           this._emitEvent(view, [])
         }
-        this._viewPointerPositionLog.clear()
       })
     })
 
@@ -151,6 +150,10 @@ export class DragEventPlugin extends EventPlugin {
     if (!view.hasElement(target as HTMLElement)) return
 
     const isDragging = this._pointerDownPerView.get(view.id) === true
+
+    if (!isDragging) {
+      this._viewPointerPositionLog.clear()
+    }
 
     const eventData = {
       view,
