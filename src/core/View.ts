@@ -107,11 +107,16 @@ export class View {
 
   // Using AABB collision detection
   overlapsWith(view: View): boolean {
+    const viewScaledWidth = view.size.width * view.scale.x
+    const viewScaledHeight = view.size.height * view.scale.y
+    const scaledWidth = this.size.width * this.scale.x
+    const scaledHeight = this.size.height * this.scale.y
+
     return (
-      this.position.x < view.position.x + view.size.width &&
-      this.position.x + this.size.width > view.position.x &&
-      this.position.y < view.position.y + view.size.height &&
-      this.position.y + this.size.height > view.position.y
+      this.position.x < view.position.x + viewScaledWidth &&
+      this.position.x + scaledWidth > view.position.x &&
+      this.position.y < view.position.y + viewScaledHeight &&
+      this.position.y + scaledHeight > view.position.y
     )
   }
 
