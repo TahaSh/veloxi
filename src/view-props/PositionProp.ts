@@ -1,5 +1,4 @@
 import { Vec2 } from '../math'
-import { clamp } from '../utils'
 import { ViewProp } from './ViewProp'
 
 type Point = { x: number; y: number }
@@ -27,13 +26,11 @@ export class PositionProp extends ViewProp<Vec2> {
     const targetPosition = new Vec2(targetX, targetY)
     const initialPosition = new Vec2(this.initialX, this.initialY)
     const currentPosition = new Vec2(this.x, this.y)
-    const fullDistance = Vec2.sub(targetPosition, initialPosition)
     const displacement = Vec2.sub(currentPosition, initialPosition)
-    let displacementAmount = 0
-    if (fullDistance.dot(displacement) > 0) {
-      displacementAmount = displacement.magnitude
-    }
-    return clamp(displacementAmount / fullDistance.magnitude, 0, 1)
+    const fullDistance = Vec2.sub(targetPosition, initialPosition)
+    const distance = Vec2.sub(fullDistance, displacement)
+    const progress = 1 - distance.magnitude / fullDistance.magnitude
+    return progress
   }
 
   set(value: Partial<Point>, runAnimation: boolean = true) {
