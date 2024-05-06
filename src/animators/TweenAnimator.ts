@@ -18,10 +18,14 @@ export const tweenConfigDefaults: TweenAnimatorConfig = {
 }
 
 export abstract class TweenAnimator<TValue> implements Animator<TValue> {
+  public readonly name = 'tween'
   protected _config: TweenAnimatorConfig
   protected _startTime?: number
   constructor(config: TweenAnimatorConfig) {
     this._config = config
+  }
+  get config() {
+    return this._config
   }
   abstract update(data: AnimatorUpdateData<TValue>): TValue
   reset(): void {

@@ -16,7 +16,11 @@ export interface AnimatorUpdateData<TValue> {
 export type Vec2AnimatorUpdateData = AnimatorUpdateData<Vec2>
 export type NumberAnimatorUpdateData = AnimatorUpdateData<number>
 
+type AnimatorName = keyof AnimatorConfigMap
+
 export interface Animator<TValue> {
+  readonly name: AnimatorName
+  config: AnimatorConfigMap[keyof AnimatorConfigMap]
   update(data: AnimatorUpdateData<TValue>): TValue
   reset?(): void
 }

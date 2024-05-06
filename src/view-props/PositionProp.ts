@@ -4,6 +4,8 @@ import { ViewProp } from './ViewProp'
 type Point = { x: number; y: number }
 
 export class PositionProp extends ViewProp<Vec2> {
+  private _animateLayoutUpdateNextFrame = false
+
   get x() {
     return this._currentValue.x + this._rect.pageOffset.left
   }
@@ -50,6 +52,10 @@ export class PositionProp extends ViewProp<Vec2> {
   }
 
   update(ts: number, dt: number): void {
+    if (this._view.isLayoutTransitionEnabled) {
+      this._runLayoutTransition()
+    }
+
     if (
       this._targetValue.x === this._currentValue.x &&
       this._targetValue.y === this._currentValue.y
@@ -64,6 +70,21 @@ export class PositionProp extends ViewProp<Vec2> {
       ts,
       dt
     })
+  }
+
+  private _runLayoutTransition() {
+    const dx = this._rect.pageOffset.left - this._previousRect.pageOffset.left
+    const dy = this._rect.pageOffset.top - this._previousRect.pageOffset.top
+    if (dx !== 0 || dy !== 0) {
+      this._animateLayoutUpdateNextFrame = true
+      this._setTarget(
+        new Vec2(this._initialValue.x - dx, this._currentValue.y - dy),
+        false
+      )
+    } else if (this._animateLayoutUpdateNextFrame) {
+      this._setTarget(this._initialValue, true)
+      this._animateLayoutUpdateNextFrame = false
+    }
   }
 
   projectStyles(): string {

@@ -43,6 +43,12 @@ export class ViewPropCollection {
   allProps(): Array<IViewProp> {
     return Array.from(this._props.values())
   }
+  allPropNames() {
+    return Array.from(this._props.keys())
+  }
+  getPropByName(propName: string): IViewProp | undefined {
+    return this._props.get(propName)
+  }
   get position(): PositionProp {
     return this._props.get('position') as PositionProp
   }

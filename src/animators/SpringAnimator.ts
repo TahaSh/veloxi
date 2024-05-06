@@ -21,9 +21,13 @@ export const springConfigDefaults: SpringAnimatorConfig = {
 const ERROR_OFFSET = 0.01
 
 export abstract class SpringAnimator<TValue> implements Animator<TValue> {
+  public readonly name = 'spring'
   protected _config: SpringAnimatorConfig
   constructor(config: SpringAnimatorConfig) {
     this._config = config
+  }
+  get config() {
+    return this._config
   }
   abstract update(data: AnimatorUpdateData<TValue>): TValue
 }

@@ -46,7 +46,7 @@ export abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
   private _registry: Registry
   private _eventBus: EventBus
   private _internalEventBus: EventBus
-  private _initialized = false
+  protected _initialized = false
   private readonly _config: TConfig
   private readonly _pluginName: string
   private readonly _id: string
@@ -90,6 +90,10 @@ export abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
     return views[0]
   }
 
+  getViewById(viewId: string): View | undefined {
+    return this._registry.getViewById(viewId)
+  }
+
   addView(view: View) {
     this._registry.addViewToPlugin(view, this)
   }
@@ -129,6 +133,85 @@ export abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
 
   notifyAboutViewRemoved(view: View) {
     this.onViewRemoved(view)
+
+    if (view.onRemoveCallback) {
+      this._invokeRemoveCallback(view)
+    }
+  }
+
+  private _invokeRemoveCallback(view: View) {
+    // For remove animation
+    const tempView = this._createTemporaryView(view)
+    requestAnimationFrame(() => {
+      tempView.onRemoveCallback?.(tempView, () => {
+        // This is the done() callback.
+        // When the user calls it, it means the animation finished
+        // and we can remove the view and the element.
+        this._deleteView(tempView)
+      })
+      setTimeout(() => {
+        // If after 10s done() was not called, delete the item manually
+        if (tempView.element.parentElement) {
+          this._deleteView(tempView)
+        }
+      }, 10000)
+    })
+  }
+
+  private _deleteView(view: View) {
+    this._registry.removeViewById(view.id)
+    view.element.remove()
+  }
+
+  // This is a temporary view for deleted view. We need to create it
+  // to show it again so the user can animate it before it disappears.
+  private _createTemporaryView(view: View) {
+    const prevRect = view.previousRect.viewportOffset
+    const prevSize = view.previousRect.size
+
+    const rotationOffsetX =
+      view.rotation.degrees < 0
+        ? 0
+        : Math.sin(view.rotation.radians) * prevSize.height * view.scale.y
+
+    const rotationOffsetY =
+      view.rotation.degrees > 0
+        ? 0
+        : Math.sin(view.rotation.radians) * prevSize.width * view.scale.y
+
+    // Re-insert the removed element but to the body tag this time.
+    // We converted it to `position: absolute` so it's removed from the layout flow.
+    // That's why we also needed to set left and top.
+    const element = view.element
+    element.style.cssText = ''
+    element.style.position = 'absolute'
+    element.style.left = `${prevRect.left + rotationOffsetX}px`
+    element.style.top = `${prevRect.top - rotationOffsetY}px`
+    element.style.width = `${prevSize.width}px`
+    element.style.height = `${prevSize.height}px`
+    element.style.transform = `
+      scale3d(${view.scale.x}, ${view.scale.y}, 1) rotate(${view.rotation.degrees}deg)
+    `
+    element.style.pointerEvents = 'none'
+    element.dataset.velRemoved = ''
+    document.body.appendChild(element)
+
+    const tempView = this._registry.createView(element, view.name)
+    tempView.styles.position = 'absolute'
+    tempView.styles.left = `${prevRect.left + rotationOffsetX}px`
+    tempView.styles.top = `${prevRect.top - rotationOffsetY}px`
+    tempView.rotation.setDegrees(view.rotation.degrees, false)
+    tempView.scale.set({ x: view.scale.x, y: view.scale.y }, false)
+    tempView.size.set(
+      { width: view.size.width, height: view.size.height },
+      false
+    )
+    view._copyAnimatorsToAnotherView(tempView)
+
+    if (view.onRemoveCallback) {
+      tempView.onRemove(view.onRemoveCallback)
+    }
+    return tempView
   }
 
   // @ts-ignore
@@ -136,6 +219,14 @@ export abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
 
   notifyAboutViewAdded(view: View) {
     this.onViewAdded(view)
+    this._invokeAddCallbacks(view)
+  }
+
+  private _invokeAddCallbacks(view: View) {
+    view.onAddCallbacks?.beforeEnter(view)
+    requestAnimationFrame(() => {
+      view.onAddCallbacks?.afterEnter(view)
+    })
   }
 
   // @ts-ignore
@@ -161,6 +252,9 @@ export class Plugin<
 > extends IPlugin<TConfig> {
   isRenderable(): boolean {
     return true
+  }
+  isInitialized(): boolean {
+    return this._initialized
   }
   // @ts-ignore
   update(ts: number, dt: number) {}
@@ -192,6 +286,10 @@ export class PluginContext<TConfig extends PluginConfig = PluginConfig> {
     this._plugin = plugin
   }
 
+  get initialized() {
+    return this._plugin.isInitialized()
+  }
+
   get config(): TConfig {
     return this._plugin.config
   }
@@ -214,6 +312,10 @@ export class PluginContext<TConfig extends PluginConfig = PluginConfig> {
 
   getView(viewName: string): View | undefined {
     return this._plugin.getView(viewName)
+  }
+
+  getViewById(viewId: string): View | undefined {
+    return this._plugin.getViewById(viewId)
   }
 
   useEventPlugin<TConfig extends PluginConfig>(

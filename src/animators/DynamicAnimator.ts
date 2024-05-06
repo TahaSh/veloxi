@@ -17,9 +17,13 @@ export const dynamicConfigDefaults: DynamicAnimatorConfig = {
 }
 
 export abstract class DynamicAnimator<TValue> implements Animator<TValue> {
+  public readonly name = 'dynamic'
   protected _config: DynamicAnimatorConfig
   constructor(config: DynamicAnimatorConfig) {
     this._config = config
+  }
+  get config() {
+    return this._config
   }
   abstract update(data: AnimatorUpdateData<TValue>): TValue
 }

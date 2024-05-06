@@ -38,6 +38,7 @@ export class Registry {
         const plugin = this.getPluginByName(pluginName)
         if (!plugin) return
         plugin.addView(view)
+        plugin.notifyAboutViewAdded(view)
       })
       this._viewsToBeCreated = []
     }
@@ -49,18 +50,18 @@ export class Registry {
       elementsToBeRemoved.forEach((domEl) => {
         const viewId = domEl.dataset.velViewId
         if (!viewId) return
-        this._removeViewById(viewId)
+        this.removeViewById(viewId)
       })
       this._viewsToBeRemoved = []
     }
   }
 
-  private _removeViewById(viewId: ViewId): void {
+  public removeViewById(viewId: ViewId): void {
     this._plugins.forEach((plugin) => {
       const views = this._viewsPerPlugin.get(plugin.id)
       if (!views) return
       const viewIndex = views.indexOf(viewId)
-      const view = this._getViewById(viewId)
+      const view = this.getViewById(viewId)
       if (viewIndex !== -1 && view) {
         views.splice(viewIndex, 1)
         plugin.notifyAboutViewRemoved(view)
@@ -69,7 +70,7 @@ export class Registry {
     this._views = this._views.filter((view) => view.id !== viewId)
   }
 
-  private _getViewById(viewId: string): View | undefined {
+  public getViewById(viewId: string): View | undefined {
     return this._views.find((view) => view.id === viewId)
   }
 

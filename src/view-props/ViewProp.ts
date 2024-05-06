@@ -10,6 +10,7 @@ export interface IViewProp {
     animatorName: TAnimatorName,
     config?: Partial<AnimatorConfigMap[TAnimatorName]>
   ): void
+  getAnimator(): Animator<unknown>
   update(ts: number, dt: number): void
   projectStyles(): string
   isTransform(): boolean
@@ -43,12 +44,20 @@ export abstract class ViewProp<TValue> implements IViewProp {
     this._animator = this._animatorFactory.createInstantAnimator()
   }
 
+  getAnimator(): Animator<TValue> {
+    return this._animator
+  }
+
   get animator(): AnimatorProp {
     return this._animatorProp
   }
 
   protected get _rect(): ViewRect {
     return this._view.rect
+  }
+
+  protected get _previousRect(): ViewRect {
+    return this._view.previousRect
   }
 
   setAnimator<TAnimatorName extends keyof AnimatorConfigMap>(

@@ -20,6 +20,10 @@ export class AnimatorProp {
     this._viewProp.setAnimator(animatorName, config)
   }
 
+  get name(): keyof AnimatorConfigMap {
+    return this._viewProp.getAnimator().name
+  }
+
   onComplete(callback: CompleteCallback) {
     this._completeCallback = callback
   }

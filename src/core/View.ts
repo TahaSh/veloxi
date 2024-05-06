@@ -9,6 +9,15 @@ import { RotationProp } from '../view-props/RotationProp'
 import { ScaleProp } from '../view-props/ScaleProp'
 import { SizeProp } from '../view-props/SizeProp'
 
+interface OnAddCallback {
+  beforeEnter: (view: View) => void
+  afterEnter: (view: View) => void
+}
+
+interface OnRemoveCallback {
+  (view: View, done: () => void): void
+}
+
 export class View {
   readonly id: string
   name: string
@@ -18,13 +27,24 @@ export class View {
   private _viewProps: ViewPropCollection
 
   private _rect: ViewRect
+  private _previousRect: ViewRect
+
+  private _onAddCallbacks: OnAddCallback | undefined
+  private _onRemoveCallback: OnRemoveCallback | undefined
+
+  private _skipFirstRenderFrame: boolean
+
+  private _layoutTransition: boolean
 
   constructor(element: HTMLElement, name: string) {
     this.id = getUniqueId()
     this.name = name
     this.element = element
     this._rect = readRect(this.element)
+    this._previousRect = readRect(this.element)
     this._viewProps = new ViewPropCollection(this)
+    this._skipFirstRenderFrame = true
+    this._layoutTransition = false
 
     this.element.dataset.velViewId = this.id
   }
@@ -63,6 +83,26 @@ export class View {
       }
       return result
     }, {})
+  }
+
+  get onAddCallbacks() {
+    return this._onAddCallbacks
+  }
+
+  get onRemoveCallback() {
+    return this._onRemoveCallback
+  }
+
+  get isLayoutTransitionEnabled() {
+    return this._layoutTransition
+  }
+
+  layoutTransition(enabled: boolean) {
+    this._layoutTransition = enabled
+  }
+
+  get _isRemoved() {
+    return typeof this.element.dataset.velRemoved !== 'undefined'
   }
 
   setPluginId(id: string) {
@@ -134,11 +174,26 @@ export class View {
     return this._rect
   }
 
+  get previousRect() {
+    return this._previousRect
+  }
+
   update(ts: number, dt: number) {
     this._viewProps.allProps().forEach((prop) => prop.update(ts, dt))
+    this._previousRect = this._rect
   }
 
   render() {
+    // If we are rendering a removed view, which is a temporary view
+    // we are showing for animation, then skip the first render frame.
+    // We need to do this to prevent some glitching because the temp view
+    // contains some initial styles to remove it from the layout flow,
+    // like position: absolute.
+    if (this._isRemoved && this._skipFirstRenderFrame) {
+      this._skipFirstRenderFrame = false
+      return
+    }
+
     let styles = ''
 
     const allProps = this._viewProps.allProps()
@@ -180,5 +235,28 @@ export class View {
 
   markAsAdded() {
     delete this.element.dataset.velProcessing
+  }
+
+  onAdd(callback: OnAddCallback) {
+    this._onAddCallbacks = callback
+  }
+
+  onRemove(callback: OnRemoveCallback) {
+    this._onRemoveCallback = callback
+  }
+
+  get viewProps() {
+    return this._viewProps
+  }
+
+  public _copyAnimatorsToAnotherView(view: View) {
+    view.viewProps.allPropNames().forEach((propName) => {
+      const animator = this.viewProps.getPropByName(propName)?.getAnimator()
+      if (animator) {
+        view.viewProps
+          .getPropByName(propName)
+          ?.setAnimator(animator.name, animator.config)
+      }
+    })
   }
 }
