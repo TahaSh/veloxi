@@ -1,4 +1,6 @@
 declare interface Animator<TValue> {
+    readonly name: AnimatorName;
+    config: AnimatorConfigMap[keyof AnimatorConfigMap];
     update(data: AnimatorUpdateData<TValue>): TValue;
     reset?(): void;
 }
@@ -18,12 +20,15 @@ declare abstract class AnimatorFactory<TValue> {
     abstract createSpringAnimator(config?: Partial<SpringAnimatorConfig>): SpringAnimator<TValue>;
 }
 
+declare type AnimatorName = keyof AnimatorConfigMap;
+
 declare class AnimatorProp {
     private _viewProp;
     private _completeCallback?;
     private _updateCallback?;
     constructor(viewProp: IViewProp);
     set<TAnimatorName extends keyof AnimatorConfigMap>(animatorName: TAnimatorName, config?: Partial<AnimatorConfigMap[TAnimatorName]>): void;
+    get name(): keyof AnimatorConfigMap;
     onComplete(callback: CompleteCallback): void;
     callCompleteCallback(): void;
     onUpdate(callback: UpdateCallback): void;
@@ -151,8 +156,10 @@ export declare class DragEventPlugin extends EventPlugin {
 }
 
 declare abstract class DynamicAnimator<TValue> implements Animator<TValue> {
+    readonly name = "dynamic";
     protected _config: DynamicAnimatorConfig;
     constructor(config: DynamicAnimatorConfig);
+    get config(): DynamicAnimatorConfig;
     abstract update(data: AnimatorUpdateData<TValue>): TValue;
 }
 
@@ -182,7 +189,9 @@ declare namespace Events {
 export { Events }
 
 declare class InstantAnimator<TValue> implements Animator<TValue> {
+    readonly name = "instant";
     protected _config: {};
+    get config(): {};
     update(data: AnimatorUpdateData<TValue>): TValue;
 }
 
@@ -190,7 +199,7 @@ declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
     private _registry;
     private _eventBus;
     private _internalEventBus;
-    private _initialized;
+    protected _initialized: boolean;
     private readonly _config;
     private readonly _pluginName;
     private readonly _id;
@@ -200,6 +209,7 @@ declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
     get config(): TConfig;
     getViews(viewName?: string): Array<View>;
     getView(viewName?: string): View | undefined;
+    getViewById(viewId: string): View | undefined;
     addView(view: View): void;
     emit<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
     on<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
@@ -207,8 +217,12 @@ declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
     notifyAboutDataChanged(data: ChangedData): void;
     onDataChanged(data: ChangedData): void;
     notifyAboutViewRemoved(view: View): void;
+    private _invokeRemoveCallback;
+    private _deleteView;
+    private _createTemporaryView;
     onViewRemoved(view: View): void;
     notifyAboutViewAdded(view: View): void;
+    private _invokeAddCallbacks;
     onViewAdded(view: View): void;
     init(): void;
     setup(): void;
@@ -218,6 +232,7 @@ declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
 
 declare interface IViewProp {
     setAnimator<TAnimatorName extends keyof AnimatorConfigMap>(animatorName: TAnimatorName, config?: Partial<AnimatorConfigMap[TAnimatorName]>): void;
+    getAnimator(): Animator<unknown>;
     update(ts: number, dt: number): void;
     projectStyles(): string;
     isTransform(): boolean;
@@ -225,6 +240,15 @@ declare interface IViewProp {
 }
 
 declare function minBy<T>(items: Array<T>, predicate: (item: T) => number): T;
+
+declare interface OnAddCallback {
+    beforeEnter: (view: View) => void;
+    afterEnter: (view: View) => void;
+}
+
+declare interface OnRemoveCallback {
+    (view: View, done: () => void): void;
+}
 
 declare class OpacityProp extends ViewProp<number> {
     get value(): number;
@@ -237,6 +261,7 @@ declare class OpacityProp extends ViewProp<number> {
 
 declare class Plugin_2<TConfig extends PluginConfig = PluginConfig> extends IPlugin<TConfig> {
     isRenderable(): boolean;
+    isInitialized(): boolean;
     update(ts: number, dt: number): void;
     render(): void;
     addView(view: View): void;
@@ -252,12 +277,14 @@ declare type PluginConfig = Record<string, any>;
 export declare class PluginContext<TConfig extends PluginConfig = PluginConfig> {
     private _plugin;
     constructor(plugin: Plugin_2<TConfig>);
+    get initialized(): boolean;
     get config(): TConfig;
     setup(callback: () => void): void;
     update(callback: (ts: number, dt: number) => void): void;
     render(callback: () => void): void;
     getViews(viewName: string): Array<View>;
     getView(viewName: string): View | undefined;
+    getViewById(viewId: string): View | undefined;
     useEventPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): EventPlugin<PluginConfig>;
     emit<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
     on<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
@@ -308,6 +335,7 @@ declare class PointerUpEvent extends PointerEvent_2 {
 }
 
 declare class PositionProp extends ViewProp<Vec2> {
+    private _animateLayoutUpdateNextFrame;
     get x(): number;
     get y(): number;
     get initialX(): number;
@@ -316,6 +344,7 @@ declare class PositionProp extends ViewProp<Vec2> {
     set(value: Partial<Point_2>, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
+    private _runLayoutTransition;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -328,8 +357,8 @@ declare class Registry {
     private _viewsToBeRemoved;
     private _viewsCreatedInPreviousFrame;
     update(): void;
-    private _removeViewById;
-    private _getViewById;
+    removeViewById(viewId: ViewId): void;
+    getViewById(viewId: string): View | undefined;
     queueNodeToBeCreated(domEl: HTMLElement): void;
     queueNodeToBeRemoved(domEl: HTMLElement): void;
     notifyPluginAboutDataChange(event: DataChangedEvent): void;
@@ -387,8 +416,10 @@ declare class SizeProp extends ViewProp<Vec2> {
 }
 
 declare abstract class SpringAnimator<TValue> implements Animator<TValue> {
+    readonly name = "spring";
     protected _config: SpringAnimatorConfig;
     constructor(config: SpringAnimatorConfig);
+    get config(): SpringAnimatorConfig;
     abstract update(data: AnimatorUpdateData<TValue>): TValue;
 }
 
@@ -420,9 +451,11 @@ export declare class SwipeEventPlugin extends EventPlugin {
 }
 
 declare abstract class TweenAnimator<TValue> implements Animator<TValue> {
+    readonly name = "tween";
     protected _config: TweenAnimatorConfig;
     protected _startTime?: number;
     constructor(config: TweenAnimatorConfig);
+    get config(): TweenAnimatorConfig;
     abstract update(data: AnimatorUpdateData<TValue>): TValue;
     reset(): void;
 }
@@ -470,6 +503,11 @@ export declare class View {
     styles: Partial<Record<keyof CSSStyleDeclaration, string>>;
     private _viewProps;
     private _rect;
+    private _previousRect;
+    private _onAddCallbacks;
+    private _onRemoveCallback;
+    private _skipFirstRenderFrame;
+    private _layoutTransition;
     constructor(element: HTMLElement, name: string);
     get position(): PositionProp;
     get scale(): ScaleProp;
@@ -477,6 +515,11 @@ export declare class View {
     get size(): SizeProp;
     get opacity(): OpacityProp;
     get data(): Record<string, string>;
+    get onAddCallbacks(): OnAddCallback | undefined;
+    get onRemoveCallback(): OnRemoveCallback | undefined;
+    get isLayoutTransitionEnabled(): boolean;
+    layoutTransition(enabled: boolean): void;
+    get _isRemoved(): boolean;
     setPluginId(id: string): void;
     hasElement(element: HTMLElement): boolean;
     getScroll(): {
@@ -488,11 +531,18 @@ export declare class View {
     distanceTo(view: View): number;
     read(): void;
     get rect(): ViewRect;
+    get previousRect(): ViewRect;
     update(ts: number, dt: number): void;
     render(): void;
     private _getUserStyles;
     markAsAdded(): void;
+    onAdd(callback: OnAddCallback): void;
+    onRemove(callback: OnRemoveCallback): void;
+    get viewProps(): ViewPropCollection;
+    _copyAnimatorsToAnotherView(view: View): void;
 }
+
+declare type ViewId = string;
 
 declare abstract class ViewProp<TValue> implements IViewProp {
     protected _animatorProp: AnimatorProp;
@@ -505,14 +555,29 @@ declare abstract class ViewProp<TValue> implements IViewProp {
     protected _view: View;
     protected _animatorFactory: AnimatorFactory<TValue>;
     constructor(animatorFactory: AnimatorFactory<TValue>, initialValue: TValue, parentView: View);
+    getAnimator(): Animator<TValue>;
     get animator(): AnimatorProp;
     protected get _rect(): ViewRect;
+    protected get _previousRect(): ViewRect;
     setAnimator<TAnimatorName extends keyof AnimatorConfigMap>(animatorName: TAnimatorName, config?: Partial<AnimatorConfigMap[TAnimatorName]>): void;
     protected _setTarget(value: TValue, runAnimation?: boolean): void;
     hasChanged(): boolean;
     update(ts: number, dt: number): void;
     abstract projectStyles(): string;
     abstract isTransform(): boolean;
+}
+
+declare class ViewPropCollection {
+    private _props;
+    constructor(view: View);
+    allProps(): Array<IViewProp>;
+    allPropNames(): string[];
+    getPropByName(propName: string): IViewProp | undefined;
+    get position(): PositionProp;
+    get scale(): ScaleProp;
+    get rotation(): RotationProp;
+    get size(): SizeProp;
+    get opacity(): OpacityProp;
 }
 
 declare interface ViewRect {
