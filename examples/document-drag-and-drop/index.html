@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document drag-and-drop</title>
+  </head>
+  <body>
+    <div class="documents-container">
+      <div
+        class="document-placeholder"
+        data-vel-view="document-container"
+        data-vel-plugin="DocumentDragPlugin"
+      >
+        Create new doc
+      </div>
+      <div
+        class="document"
+        data-vel-view="document-container"
+        data-vel-plugin="DocumentDragPlugin"
+      >
+        <div class="document__placeholder"></div>
+
+        <div
+          class="document__content"
+          data-vel-view="document"
+          data-vel-plugin="DocumentDragPlugin"
+        >
+          <div class="document__tag">FUTURE</div>
+          <h2 class="document__title">The future of autonomous cars in 2025</h2>
+          <p class="document__text">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero modi
+            omnis consequuntur quis dolorem ipsa ad odit, vel dolore, delectus
+            error mollitia laborum! Commodi minus dolorem dolores dolor
+            assumenda voluptate laboriosam labore illo enim, repellendus ex
+            impedit sunt corrupti quo adipisci natus doloremque facere? Iusto ad
+            ipsa ea itaque iure accusamus quae voluptatibus dolorum, vitae,
+            architecto dolores minima amet. Architecto, delectus expedita
+            exercitationem consequuntur quisquam officiis rerum reprehenderit
+            enim, dicta, amet doloribus recusandae. Neque repudiandae aut fugit
+            ipsa nobis ullam nostrum, harum, doloremque optio possimus,
+            inventore nesciunt soluta eos dolorem veritatis. Harum dolorum
+            suscipit quibusdam unde sed! Ipsam, non porro.
+          </p>
+        </div>
+      </div>
+      <div
+        class="document"
+        data-vel-view="document-container"
+        data-vel-plugin="DocumentDragPlugin"
+      >
+        <div class="document__placeholder"></div>
+        <div
+          class="document__content"
+          data-vel-view="document"
+          data-vel-plugin="DocumentDragPlugin"
+        >
+          <div class="document__tag document__tag--blue">DESIGN</div>
+          <h2 class="document__title">
+            Essentials for Creating Engaging Interfaces
+          </h2>
+          <p class="document__text">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero modi
+            omnis consequuntur quis dolorem ipsa ad odit, vel dolore, delectus
+            error mollitia laborum! Commodi minus dolorem dolores dolor
+            assumenda voluptate laboriosam labore illo enim, repellendus ex
+            impedit sunt corrupti quo adipisci natus doloremque facere? Iusto ad
+            ipsa ea itaque iure accusamus quae voluptatibus dolorum, vitae,
+            architecto dolores minima amet. Architecto, delectus expedita
+            exercitationem consequuntur quisquam officiis rerum reprehenderit
+            enim, dicta, amet doloribus recusandae. Neque repudiandae aut fugit
+            ipsa nobis ullam nostrum, harum, doloremque optio possimus,
+            inventore nesciunt soluta eos dolorem veritatis. Harum dolorum
+            suscipit quibusdam unde sed! Ipsam, non porro.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="drop-actions-container">
+      <div
+        class="drop-actions-container__inner"
+        data-vel-view="actions-container"
+        data-vel-plugin="DocumentDragPlugin"
+      >
+        <div
+          class="drop-action drop-action--red"
+          data-vel-view="delete-action"
+          data-vel-plugin="DocumentDragPlugin"
+        >
+          <div class="drop-action__icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              id="fi_3405244"
+              data-name="Layer 2"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path
+                d="M19,7a1,1,0,0,0-1,1V19.191A1.92,1.92,0,0,1,15.99,21H8.01A1.92,1.92,0,0,1,6,19.191V8A1,1,0,0,0,4,8V19.191A3.918,3.918,0,0,0,8.01,23h7.98A3.918,3.918,0,0,0,20,19.191V8A1,1,0,0,0,19,7Z"
+              ></path>
+              <path
+                d="M20,4H16V2a1,1,0,0,0-1-1H9A1,1,0,0,0,8,2V4H4A1,1,0,0,0,4,6H20a1,1,0,0,0,0-2ZM10,4V3h4V4Z"
+              ></path>
+              <path d="M11,17V10a1,1,0,0,0-2,0v7a1,1,0,0,0,2,0Z"></path>
+              <path d="M15,17V10a1,1,0,0,0-2,0v7a1,1,0,0,0,2,0Z"></path>
+            </svg>
+          </div>
+          <div
+            class="drop-action__text"
+            data-vel-plugin="DocumentDragPlugin"
+            data-vel-view="drop-action-text-deleted"
+          >
+            Deleted
+          </div>
+        </div>
+        <div
+          class="drop-action drop-action--blue"
+          data-vel-view="archive-action"
+          data-vel-plugin="DocumentDragPlugin"
+        >
+          <div class="drop-action__icon">
+            <svg
+              version="1.1"
+              xmlns="http://www.w3.org/2000/svg"
+              xmlns:xlink="http://www.w3.org/1999/xlink"
+              x="0px"
+              y="0px"
+              viewBox="0 0 384 384"
+              xml:space="preserve"
+              fill="currentColor"
+            >
+              <g>
+                <g>
+                  <path
+                    d="M341.333,0H42.453C18.88,0,0.213,19.093,0.213,42.667L0,341.333C0,364.907,18.88,384,42.453,384h298.88
+			C364.907,384,384,364.907,384,341.333V42.667C384,19.093,364.907,0,341.333,0z M341.333,256H256c0,35.307-28.693,64-64,64
+			s-64-28.693-64-64H42.453V42.667h298.88V256z"
+                  ></path>
+                </g>
+              </g>
+            </svg>
+          </div>
+          <div
+            class="drop-action__text"
+            data-vel-plugin="DocumentDragPlugin"
+            data-vel-view="drop-action-text-archived"
+          >
+            Archived
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./index.ts"></script>
+  </body>
+</html>
