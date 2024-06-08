@@ -61,6 +61,7 @@ declare class App {
     constructor();
     addPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
     reset(pluginName?: string, callback?: () => void): void;
+    destroy(pluginName?: string, callback?: () => void): void;
     getPlugin<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi;
     getPlugins<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi[];
     onPluginEvent<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
@@ -560,6 +561,9 @@ declare class Registry {
     getViewById(viewId: string): CoreView | undefined;
     private _getPluginById;
     private _getPluginViewById;
+    destroy(pluginName?: string, callback?: () => void): void;
+    private _destroyPlugin;
+    private _destroyAll;
     reset(pluginName?: string, callback?: () => void): void;
     private _resetPlugin;
     queueNodeToBeCreated(domEl: HTMLElement): void;
