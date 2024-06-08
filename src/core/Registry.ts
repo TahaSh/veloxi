@@ -101,6 +101,10 @@ export class Registry {
       } else {
         view = this._createNewView(domEl, viewName, plugin)
       }
+
+      if (view.isInverseEffectEnabled) {
+        view.setAnimatorsFromParent()
+      }
       plugin.notifyAboutViewAdded(view)
     })
     this._viewsToBeCreated = []

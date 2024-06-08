@@ -240,6 +240,28 @@ export class CoreView {
     }
   }
 
+  setAnimatorsFromParent() {
+    let parent: CoreView | undefined = this._parent
+    while (parent) {
+      if (parent._inverseEffect) {
+        break
+      }
+      parent = parent._parent
+    }
+    if (!parent) {
+      return
+    }
+
+    if (this.position.animator.name === 'instant') {
+      const positionAnimator = parent.viewProps.position.getAnimator()
+      this.position.setAnimator(positionAnimator.name, positionAnimator.config)
+    }
+    if (this.scale.animator.name === 'instant') {
+      const scaleAnimator = parent.viewProps.scale.getAnimator()
+      this.scale.setAnimator(scaleAnimator.name, scaleAnimator.config)
+    }
+  }
+
   get _isRemoved() {
     return !this._registry.getViewById(this.id)
   }
