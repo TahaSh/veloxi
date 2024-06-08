@@ -1,7 +1,9 @@
 import { Vec2 } from '../math'
+import { CSSNumber, createCSSNumber } from '../utils/CSSNumber'
 import {
   Animator,
   AnimatorUpdateData,
+  CSSNumbersAnimatorUpdateData,
   NumberAnimatorUpdateData,
   Vec2AnimatorUpdateData
 } from './types'
@@ -36,7 +38,9 @@ export class Vec2DynamicAnimator extends DynamicAnimator<Vec2> {
 
     if (this._shouldFinish(target, current, velocity)) {
       result = target
-      animatorProp.callCompleteCallback()
+      requestAnimationFrame(() => {
+        animatorProp.callCompleteCallback()
+      })
     }
 
     animatorProp.callUpdateCallback()
@@ -59,12 +63,46 @@ export class NumberDynamicAnimator extends DynamicAnimator<number> {
 
     if (this._shouldFinish(target, current, velocity)) {
       result = target
-      animatorProp.callCompleteCallback()
+      requestAnimationFrame(() => {
+        animatorProp.callCompleteCallback()
+      })
     }
 
     animatorProp.callUpdateCallback()
 
     return result
+  }
+
+  private _shouldFinish(target: number, current: number, velocity: number) {
+    const diff = Math.abs(target - current)
+    return diff < ERROR_OFFSET && Math.abs(velocity) < ERROR_OFFSET
+  }
+}
+
+export class CSSNumbersDynamicAnimator extends DynamicAnimator<CSSNumber[]> {
+  update({ animatorProp, current, target, dt }: CSSNumbersAnimatorUpdateData) {
+    return target.map((oneTarget, index) => {
+      const oneCurrent = current[index]
+
+      const unit = oneTarget.value === 0 ? oneCurrent.unit : oneTarget.unit
+
+      const diff = oneTarget.value - oneCurrent.value
+      const velocity = diff * this._config.speed
+
+      const resultValue = oneCurrent.value + velocity * dt
+      let result = createCSSNumber(`${resultValue}${unit}`)
+
+      if (this._shouldFinish(oneTarget.value, oneCurrent.value, velocity)) {
+        result = oneTarget
+        requestAnimationFrame(() => {
+          animatorProp.callCompleteCallback()
+        })
+      }
+
+      animatorProp.callUpdateCallback()
+
+      return result
+    })
   }
 
   private _shouldFinish(target: number, current: number, velocity: number) {

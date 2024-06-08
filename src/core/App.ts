@@ -7,29 +7,92 @@ import {
 } from '../builtin-events/PointerEvents'
 import { DomObserver, NodeAddedEvent, NodeRemovedEvent } from './DomObserver'
 import { EventBus } from './EventBus'
-import { PluginConfig, PluginFactory } from './Plugin'
+import { PluginApi, PluginConfig, PluginFactory } from './Plugin'
 import { Registry } from './Registry'
+
+export type ReadyCallback<TPluginApi extends PluginApi> = (
+  pluginApi: TPluginApi
+) => void
+
+export class PluginReadyEvent {
+  pluginApi: PluginApi
+  constructor(props: { pluginApi: PluginApi }) {
+    this.pluginApi = props.pluginApi
+  }
+}
+
+export class PluginReadySetupEvent {
+  pluginApi: PluginApi
+  constructor(props: { pluginApi: PluginApi }) {
+    this.pluginApi = props.pluginApi
+  }
+}
 
 class App {
   private _previousTime: number = 0
   private readonly _registry: Registry
   private readonly _eventBus: EventBus
+  private readonly _appEventBus: EventBus
 
   static create() {
     return new App()
   }
 
   constructor() {
-    this._registry = new Registry()
     this._eventBus = new EventBus()
+    this._appEventBus = new EventBus()
+    this._registry = new Registry(this._appEventBus, this._eventBus)
     new DomObserver(this._eventBus)
   }
 
-  addPlugin<TConfig extends PluginConfig = PluginConfig>(
-    pluginFactory: PluginFactory<TConfig>,
+  addPlugin<
+    TConfig extends PluginConfig = PluginConfig,
+    TPluginApi extends PluginApi = PluginApi
+  >(
+    pluginFactory: PluginFactory<TConfig, TPluginApi>,
     config: TConfig = {} as TConfig
   ): void {
-    this._registry.createPlugin(pluginFactory, this._eventBus, config)
+    if (!this._registry.hasPlugin(pluginFactory)) {
+      this._registry.createPlugin(pluginFactory, this._eventBus, config)
+    }
+  }
+
+  reset(pluginName?: string, callback?: () => void) {
+    this._registry.reset(pluginName, callback)
+  }
+
+  getPlugin<TPluginApi extends PluginApi>(
+    pluginFactory: PluginFactory<PluginConfig> | string,
+    pluginKey?: string
+  ): TPluginApi {
+    let pluginName =
+      typeof pluginFactory === 'string'
+        ? pluginFactory
+        : pluginFactory.pluginName
+    const plugin = this._registry.getPluginByName(pluginName, pluginKey)
+    if (!plugin) {
+      throw new Error(
+        `You can\'t call getPlugin for ${pluginName} with key: ${pluginKey} because it does not exist in your app`
+      )
+    }
+    return plugin.api as TPluginApi
+  }
+
+  getPlugins<TPluginApi extends PluginApi>(
+    pluginFactory: PluginFactory<PluginConfig> | string,
+    pluginKey?: string
+  ): TPluginApi[] {
+    let pluginName =
+      typeof pluginFactory === 'string'
+        ? pluginFactory
+        : pluginFactory.pluginName
+    const plugins = this._registry.getPluginsByName(pluginName, pluginKey)
+    if (plugins.length === 0) {
+      throw new Error(
+        `You can\'t call getPlugins for ${pluginName} with key: ${pluginKey} because they don\'t exist in your app`
+      )
+    }
+    return plugins.map((plugin) => plugin.api) as TPluginApi[]
   }
 
   onPluginEvent<TEvent>(
@@ -52,6 +115,13 @@ class App {
     }
   }
 
+  ready<TPluginApi extends PluginApi>(
+    pluginName: string,
+    callback: ReadyCallback<TPluginApi>
+  ): void {
+    this._appEventBus.subscribeToPluginReadyEvent(callback, pluginName)
+  }
+
   private _start() {
     this._setup()
     requestAnimationFrame(this._tick.bind(this))
@@ -59,6 +129,7 @@ class App {
 
   private _setup() {
     this._listenToNativeEvents()
+    this._subscribeToEvents()
   }
 
   private _listenToNativeEvents() {
@@ -161,6 +232,12 @@ class App {
     })
     this._registry.getViews().forEach((view) => {
       view.update(ts, dt)
+    })
+    this._registry.getViews().forEach((view) => {
+      // Update previous rect after all views have been updated.
+      // This is needed to ensure that we are using the same
+      // previous rect across all view props.
+      view._updatePreviousRect()
     })
   }
 

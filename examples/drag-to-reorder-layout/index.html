@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drag to reorder (layout transition)</title>
+  </head>
+  <body>
+    <div
+      class="list"
+      data-vel-plugin="DragToReorderPlugin"
+      data-vel-view="list"
+      data-vel-data-ordered-ids='["2", "1", "4", "3"]'
+    >
+      <div
+        class="item"
+        data-vel-plugin="DragToReorderPlugin"
+        data-vel-view="item"
+        data-vel-data-item-id="1"
+        data-vel-layout-id="1"
+      >
+        Item 1
+      </div>
+      <div
+        class="item"
+        data-vel-plugin="DragToReorderPlugin"
+        data-vel-view="item"
+        data-vel-data-item-id="2"
+        data-vel-layout-id="2"
+      >
+        Item 2
+      </div>
+      <div
+        class="item"
+        data-vel-plugin="DragToReorderPlugin"
+        data-vel-view="item"
+        data-vel-data-item-id="3"
+        data-vel-layout-id="3"
+      >
+        Item 3
+      </div>
+      <div
+        class="item"
+        data-vel-plugin="DragToReorderPlugin"
+        data-vel-view="item"
+        data-vel-layout-id="4"
+        data-vel-data-item-id="4"
+      >
+        Item 4
+      </div>
+    </div>
+    <script type="module">
+      import { app, DragToReorderPlugin, ReorderEvent } from './main.ts'
+      const list = document.querySelector('.list')
+      app.onPluginEvent(DragToReorderPlugin, ReorderEvent, (event) => {
+        list.dataset.velDataOrderedIds = event.itemIdsJson
+        applyOrder()
+      })
+      const items = document.querySelectorAll('.item')
+      function applyOrder() {
+        const orderedIds = JSON.parse(list.dataset.velDataOrderedIds)
+        const orderedItems = orderedIds.map((id) =>
+          document.querySelector(`.item[data-vel-data-item-id='${id}']`)
+        )
+        list.innerHTML = ''
+        orderedItems.forEach((item) => {
+          list.appendChild(item)
+        })
+      }
+      applyOrder()
+    </script>
+  </body>
+</html>

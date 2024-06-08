@@ -1,5 +1,7 @@
 import { Vec2 } from '../math'
+import { CSSNumber } from '../utils/CSSNumber'
 import {
+  CSSNumbersDynamicAnimator,
   DynamicAnimator,
   DynamicAnimatorConfig,
   NumberDynamicAnimator,
@@ -8,6 +10,7 @@ import {
 } from './DynamicAnimator'
 import { InstantAnimator } from './InstantAnimator'
 import {
+  CSSNumbersSpringAnimator,
   NumberSpringAnimator,
   SpringAnimator,
   SpringAnimatorConfig,
@@ -15,6 +18,7 @@ import {
   springConfigDefaults
 } from './SpringAnimator'
 import {
+  CSSNumbersTweenAnimator,
   NumberTweenAnimator,
   TweenAnimator,
   TweenAnimatorConfig,
@@ -64,6 +68,30 @@ export class Vec2AnimatorFactory extends AnimatorFactory<Vec2> {
   }
   createSpringAnimator(config?: SpringAnimatorConfig): SpringAnimator<Vec2> {
     return new Vec2SpringAnimator({ ...springConfigDefaults, ...config })
+  }
+}
+
+export class CSSNumbersAnimatorFactory extends AnimatorFactory<CSSNumber[]> {
+  createInstantAnimator(): InstantAnimator<CSSNumber[]> {
+    return new InstantAnimator()
+  }
+  createTweenAnimator(
+    config?: TweenAnimatorConfig
+  ): TweenAnimator<CSSNumber[]> {
+    return new CSSNumbersTweenAnimator({ ...tweenConfigDefaults, ...config })
+  }
+  createDynamicAnimator(
+    config?: DynamicAnimatorConfig
+  ): DynamicAnimator<CSSNumber[]> {
+    return new CSSNumbersDynamicAnimator({
+      ...dynamicConfigDefaults,
+      ...config
+    })
+  }
+  createSpringAnimator(
+    config?: SpringAnimatorConfig
+  ): SpringAnimator<CSSNumber[]> {
+    return new CSSNumbersSpringAnimator({ ...springConfigDefaults, ...config })
   }
 }
 

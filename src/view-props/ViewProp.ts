@@ -1,6 +1,6 @@
-import { View } from '..'
 import { AnimatorFactory } from '../animators'
 import { Animator, AnimatorConfigMap } from '../animators/types'
+import { CoreView } from '../core/View'
 import { cloneValue } from '../utils/CloneValue'
 import { ViewRect } from '../utils/RectReader'
 import { AnimatorProp } from './AnimatorProp'
@@ -15,23 +15,32 @@ export interface IViewProp {
   projectStyles(): string
   isTransform(): boolean
   hasChanged(): boolean
+  isAnimating: boolean
+}
+
+export interface AnimatableProp {
+  setAnimator<TAnimatorName extends keyof AnimatorConfigMap>(
+    animatorName: TAnimatorName,
+    config?: Partial<AnimatorConfigMap[TAnimatorName]>
+  ): void
+  animator: AnimatorProp
 }
 
 export abstract class ViewProp<TValue> implements IViewProp {
   protected _animatorProp: AnimatorProp
   protected _animator: Animator<TValue>
   protected _initialValue: TValue
-  protected _previousValue: TValue
-  protected _targetValue: TValue
-  protected _currentValue: TValue
+  public _previousValue: TValue
+  public _targetValue: TValue
+  public _currentValue: TValue
   protected _hasChanged: boolean
-  protected _view: View
+  protected _view: CoreView
   protected _animatorFactory: AnimatorFactory<TValue>
 
   constructor(
     animatorFactory: AnimatorFactory<TValue>,
     initialValue: TValue,
-    parentView: View
+    parentView: CoreView
   ) {
     this._animatorProp = new AnimatorProp(this)
     this._animatorFactory = animatorFactory
@@ -42,6 +51,10 @@ export abstract class ViewProp<TValue> implements IViewProp {
     this._hasChanged = false
     this._view = parentView
     this._animator = this._animatorFactory.createInstantAnimator()
+  }
+
+  get isAnimating(): boolean {
+    return this.animator.isAnimating
   }
 
   getAnimator(): Animator<TValue> {
@@ -77,6 +90,7 @@ export abstract class ViewProp<TValue> implements IViewProp {
       this._currentValue = value
     } else {
       this._animator.reset?.()
+      this.animator.markAsAnimating()
     }
     this._hasChanged = true
   }

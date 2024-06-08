@@ -1,7 +1,9 @@
 import { Vec2 } from '../math'
+import { CSSNumber, createCSSNumber } from '../utils/CSSNumber'
 import {
   Animator,
   AnimatorUpdateData,
+  CSSNumbersAnimatorUpdateData,
   NumberAnimatorUpdateData,
   Vec2AnimatorUpdateData
 } from './types'
@@ -50,7 +52,9 @@ export class Vec2SpringAnimator extends SpringAnimator<Vec2> {
 
     if (this._shouldFinish(target, current)) {
       result = target
-      animatorProp.callCompleteCallback()
+      requestAnimationFrame(() => {
+        animatorProp.callCompleteCallback()
+      })
     }
 
     return result
@@ -74,10 +78,47 @@ export class NumberSpringAnimator extends SpringAnimator<number> {
 
     if (this._shouldFinish(target, current)) {
       result = target
-      animatorProp.callCompleteCallback()
+      requestAnimationFrame(() => {
+        animatorProp.callCompleteCallback()
+      })
     }
 
     return result
+  }
+
+  private _shouldFinish(target: number, current: number) {
+    const diff = Math.abs(target - current)
+    return diff < ERROR_OFFSET && Math.abs(this._velocity) < ERROR_OFFSET
+  }
+}
+
+export class CSSNumbersSpringAnimator extends SpringAnimator<CSSNumber[]> {
+  _velocity: number = 0
+  update({ animatorProp, current, target, dt }: CSSNumbersAnimatorUpdateData) {
+    return target.map((oneTarget, index) => {
+      const oneCurrent = current[index]
+
+      const unit = oneTarget.value === 0 ? oneCurrent.unit : oneTarget.unit
+
+      const force =
+        -(oneCurrent.value - oneTarget.value) * this._config.stiffness
+
+      this._velocity += force
+      this._velocity *= this._config.damping
+
+      const resultValue =
+        oneCurrent.value + this._velocity * dt * this._config.speed
+      let result = createCSSNumber(`${resultValue}${unit}`)
+
+      if (this._shouldFinish(oneTarget.value, oneCurrent.value)) {
+        result = oneTarget
+        requestAnimationFrame(() => {
+          animatorProp.callCompleteCallback()
+        })
+      }
+
+      return result
+    })
   }
 
   private _shouldFinish(target: number, current: number) {

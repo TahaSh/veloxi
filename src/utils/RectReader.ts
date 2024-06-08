@@ -1,3 +1,8 @@
+export interface RectSize {
+  width: number
+  height: number
+}
+
 export interface ViewRect {
   viewportOffset: {
     left: number
@@ -9,10 +14,7 @@ export interface ViewRect {
     left: number
     top: number
   }
-  size: {
-    width: number
-    height: number
-  }
+  size: RectSize
 }
 
 export function readRect(element: HTMLElement): ViewRect {

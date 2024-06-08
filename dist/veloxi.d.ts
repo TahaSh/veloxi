@@ -1,3 +1,8 @@
+declare interface AnimatableProp {
+    setAnimator<TAnimatorName extends keyof AnimatorConfigMap>(animatorName: TAnimatorName, config?: Partial<AnimatorConfigMap[TAnimatorName]>): void;
+    animator: AnimatorProp;
+}
+
 declare interface Animator<TValue> {
     readonly name: AnimatorName;
     config: AnimatorConfigMap[keyof AnimatorConfigMap];
@@ -26,10 +31,13 @@ declare class AnimatorProp {
     private _viewProp;
     private _completeCallback?;
     private _updateCallback?;
+    private _isAnimating;
     constructor(viewProp: IViewProp);
     set<TAnimatorName extends keyof AnimatorConfigMap>(animatorName: TAnimatorName, config?: Partial<AnimatorConfigMap[TAnimatorName]>): void;
     get name(): keyof AnimatorConfigMap;
     onComplete(callback: CompleteCallback): void;
+    get isAnimating(): boolean;
+    markAsAnimating(): void;
     callCompleteCallback(): void;
     onUpdate(callback: UpdateCallback): void;
     callUpdateCallback(): void;
@@ -48,11 +56,16 @@ declare class App {
     private _previousTime;
     private readonly _registry;
     private readonly _eventBus;
+    private readonly _appEventBus;
     static create(): App;
     constructor();
-    addPlugin<TConfig extends PluginConfig = PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): void;
+    addPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
+    reset(pluginName?: string, callback?: () => void): void;
+    getPlugin<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi;
+    getPlugins<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi[];
     onPluginEvent<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     run(): void;
+    ready<TPluginApi extends PluginApi>(pluginName: string, callback: ReadyCallback<TPluginApi>): void;
     private _start;
     private _setup;
     private _listenToNativeEvents;
@@ -66,6 +79,36 @@ declare class App {
     private _render;
 }
 
+declare class BorderRadiusProp extends ViewProp<CSSNumber[]> implements ViewBorderRadius {
+    private _invertedBorderRadius?;
+    private _forceStyleUpdateThisFrame;
+    setFromElementPropValue(value: ElementPropValue<BorderRadiusValue>): void;
+    get value(): BorderRadiusValue;
+    get invertedBorderRadius(): VHBorderRadiusValue | undefined;
+    set(value: string | Partial<BorderRadiusValueInput>, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
+    update(ts: number, dt: number): void;
+    applyScaleInverse(): void;
+    private _applyScaleInverse;
+    projectStyles(): string;
+    isTransform(): boolean;
+}
+
+declare interface BorderRadiusValue {
+    topLeft: CSSNumber;
+    topRight: CSSNumber;
+    bottomRight: CSSNumber;
+    bottomLeft: CSSNumber;
+    toCssPercentageForNewSize?(newSize: RectSize): string;
+}
+
+declare interface BorderRadiusValueInput {
+    topLeft: string;
+    topRight: string;
+    bottomRight: string;
+    bottomLeft: string;
+}
+
 export declare interface ChangedData {
     dataName: string;
     dataValue: string;
@@ -74,9 +117,93 @@ export declare interface ChangedData {
 
 declare function clamp(num: number, min: number, max: number): number;
 
+export declare class ClickEvent {
+    props: {
+        view: View;
+    };
+    view: View;
+    constructor(props: {
+        view: View;
+    });
+}
+
+export declare class ClickEventPlugin extends EventPlugin {
+    static pluginName: string;
+    subscribeToEvents(eventBus: EventBus): void;
+}
+
 declare type CompleteCallback = () => void;
 
+declare class CoreView {
+    readonly id: string;
+    name: string;
+    element: HTMLElement;
+    styles: Partial<Record<keyof CSSStyleDeclaration, string>>;
+    private _viewProps;
+    private _previousRect;
+    private _onAddCallbacks;
+    private _onRemoveCallback;
+    private _skipFirstRenderFrame;
+    private _layoutTransition;
+    private _registry;
+    private _layoutId;
+    private _elementReader;
+    private _temporaryView;
+    private _inverseEffect;
+    constructor(element: HTMLElement, name: string, registry: Registry);
+    destroy(): void;
+    get elementReader(): ElementReader;
+    setElement(element: HTMLElement): void;
+    get layoutId(): string | undefined;
+    get position(): ViewPosition;
+    get scale(): ScaleProp;
+    get _children(): CoreView[];
+    get _parent(): CoreView | undefined;
+    get _parents(): CoreView[];
+    get rotation(): ViewRotation;
+    get size(): ViewSize;
+    get opacity(): ViewOpacity;
+    get borderRadius(): ViewBorderRadius;
+    get origin(): ViewOrigin;
+    get data(): ViewDataProp;
+    get onAddCallbacks(): OnAddCallback | undefined;
+    get onRemoveCallback(): OnRemoveCallback | undefined;
+    get isLayoutTransitionEnabled(): boolean;
+    get hasLayoutTransitionEnabledForParents(): boolean;
+    get isInverseEffectEnabled(): boolean;
+    layoutTransition(enabled: boolean): void;
+    inverseEffect(enabled: boolean): void;
+    get _isRemoved(): boolean;
+    setPluginId(id: string): void;
+    hasElement(element: HTMLElement): boolean;
+    getScroll(): Point;
+    intersects(x: number, y: number): boolean;
+    overlapsWith(view: View): boolean;
+    distanceTo(view: View): number;
+    read(): void;
+    get rect(): ViewRect;
+    get previousRect(): ViewRect;
+    update(ts: number, dt: number): void;
+    _updatePreviousRect(): void;
+    setAsTemporaryView(): void;
+    get isTemporaryView(): boolean;
+    render(): void;
+    private _getUserStyles;
+    markAsAdded(): void;
+    onAdd(callback: OnAddCallback): void;
+    onRemove(callback: OnRemoveCallback): void;
+    get viewProps(): ViewPropCollection;
+    getPropByName(propName: ViewPropName): IViewProp | undefined;
+    _copyAnimatorsToAnotherView(view: CoreView): void;
+}
+
 export declare function createApp(): App;
+
+declare interface CSSNumber {
+    value: number;
+    unit: string;
+    valueWithUnit: string;
+}
 
 export declare class DataChangedEvent implements DataEvent {
     event: DataEvent;
@@ -167,14 +294,35 @@ declare interface DynamicAnimatorConfig {
     speed: number;
 }
 
+declare interface ElementPropValue<T> {
+    get value(): T;
+}
+
+declare class ElementReader {
+    private _rect;
+    private _computedStyle;
+    constructor(element: HTMLElement);
+    read<K extends keyof ViewPropNameToElementPropValue>(propName: K): ViewPropNameToElementPropValue[K] | undefined;
+    get rect(): ViewRect;
+    get opacity(): ElementPropValue<number>;
+    get borderRadius(): ElementPropValue<BorderRadiusValue>;
+    get origin(): ElementPropValue<Vec2>;
+}
+
 export declare class EventBus {
     private _listeners;
-    subscribeToEvent<TEvent>(EventCtor: new (props: TEvent) => TEvent, listener: (props: TEvent) => void): void;
-    emitEvent<TEvent>(EventCtor: new (props: TEvent) => TEvent, props: TEvent): void;
+    private _keyedListeners;
+    subscribeToEvent<TEvent>(EventCtor: new (props: TEvent) => TEvent, listener: (props: TEvent) => void, key?: string): void;
+    private _subscribeToKeyedEvent;
+    emitEvent<TEvent>(EventCtor: new (props: TEvent) => TEvent, props: TEvent, key?: string): void;
+    private _emitKeyedEvent;
+    private _convertListener;
+    subscribeToPluginReadyEvent<TPluginApi extends PluginApi>(listener: ReadyCallback<TPluginApi>, pluginName: string, forSetup?: boolean): void;
+    emitPluginReadyEvent<TPluginApi extends PluginApi>(pluginName: string, pluginApi: TPluginApi, forSetup?: boolean): void;
     reset(): void;
 }
 
-export declare class EventPlugin<TConfig extends PluginConfig = PluginConfig> extends IPlugin<TConfig> {
+export declare class EventPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> extends IPlugin<TConfig, TPluginApi> {
     isRenderable(): boolean;
 }
 
@@ -195,35 +343,47 @@ declare class InstantAnimator<TValue> implements Animator<TValue> {
     update(data: AnimatorUpdateData<TValue>): TValue;
 }
 
-declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig> {
+declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> {
     private _registry;
     private _eventBus;
+    private _appEventBus;
     private _internalEventBus;
     protected _initialized: boolean;
     private readonly _config;
+    private readonly _pluginFactory;
     private readonly _pluginName;
     private readonly _id;
-    constructor(pluginName: string, registry: Registry, eventBus: EventBus, config: TConfig);
+    private readonly _pluginKey?;
+    private _layoutIdViewMapWaitingToEnter;
+    private _apiData;
+    private _isReady;
+    constructor(pluginFactory: PluginFactory<TConfig, TPluginApi>, pluginName: string, registry: Registry, eventBus: EventBus, appEventBus: EventBus, config: TConfig, pluginKey?: string);
+    get api(): TPluginApi;
+    _setApi(data: TPluginApi): void;
     get pluginName(): string;
+    get pluginFactory(): PluginFactory<TConfig, TPluginApi>;
+    get pluginKey(): string | undefined;
     get id(): string;
     get config(): TConfig;
     getViews(viewName?: string): Array<View>;
     getView(viewName?: string): View | undefined;
     getViewById(viewId: string): View | undefined;
     addView(view: View): void;
+    setInternalEventBus(eventBus: EventBus): void;
+    get internalBusEvent(): EventBus;
     emit<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
     on<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
-    useEventPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): EventPlugin;
+    useEventPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): EventPlugin<TConfig, TPluginApi>;
     notifyAboutDataChanged(data: ChangedData): void;
     onDataChanged(data: ChangedData): void;
-    notifyAboutViewRemoved(view: View): void;
+    removeView(view: CoreView): void;
     private _invokeRemoveCallback;
     private _deleteView;
     private _createTemporaryView;
-    onViewRemoved(view: View): void;
-    notifyAboutViewAdded(view: View): void;
+    onViewRemoved(view: CoreView): void;
+    notifyAboutViewAdded(view: CoreView): void;
     private _invokeAddCallbacks;
-    onViewAdded(view: View): void;
+    onViewAdded(view: CoreView): void;
     init(): void;
     setup(): void;
     subscribeToEvents(eventBus: EventBus): void;
@@ -237,20 +397,24 @@ declare interface IViewProp {
     projectStyles(): string;
     isTransform(): boolean;
     hasChanged(): boolean;
+    isAnimating: boolean;
 }
 
 declare function minBy<T>(items: Array<T>, predicate: (item: T) => number): T;
 
 declare interface OnAddCallback {
-    beforeEnter: (view: View) => void;
-    afterEnter: (view: View) => void;
+    afterRemoved?: boolean;
+    onInitialLoad?: boolean;
+    beforeEnter: (view: CoreView) => void;
+    afterEnter: (view: CoreView) => void;
 }
 
 declare interface OnRemoveCallback {
-    (view: View, done: () => void): void;
+    (view: CoreView, done: () => void): void;
 }
 
-declare class OpacityProp extends ViewProp<number> {
+declare class OpacityProp extends ViewProp<number> implements ViewOpacity {
+    setFromElementPropValue(value: ElementPropValue<number>): void;
     get value(): number;
     set(value: number, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;
@@ -259,33 +423,45 @@ declare class OpacityProp extends ViewProp<number> {
     isTransform(): boolean;
 }
 
-declare class Plugin_2<TConfig extends PluginConfig = PluginConfig> extends IPlugin<TConfig> {
+declare class OriginProp extends ViewProp<Vec2> implements ViewOrigin {
+    get x(): number;
+    get y(): number;
+    set(value: Partial<Point>): void;
+    reset(): void;
+    projectStyles(): string;
+    isTransform(): boolean;
+}
+
+declare class Plugin_2<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> extends IPlugin<TConfig, TPluginApi> {
     isRenderable(): boolean;
     isInitialized(): boolean;
     update(ts: number, dt: number): void;
     render(): void;
-    addView(view: View): void;
+    addView(view: CoreView): void;
 }
 export { Plugin_2 as Plugin }
 
-declare interface PluginClassFactory<TConfig extends PluginConfig = PluginConfig> extends PluginFactoryStaticFields {
-    new (pluginName: string, registry: Registry, eventBus: EventBus, config: TConfig): IPlugin<TConfig>;
+declare type PluginApi = Record<string, any>;
+
+declare interface PluginClassFactory<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> extends PluginFactoryStaticFields {
+    new (pluginFactory: PluginFactory<TConfig, TPluginApi>, pluginName: string, registry: Registry, eventBus: EventBus, appEventBus: EventBus, config: TConfig, pluginKey?: string): IPlugin<TConfig, TPluginApi>;
 }
 
 declare type PluginConfig = Record<string, any>;
 
-export declare class PluginContext<TConfig extends PluginConfig = PluginConfig> {
+export declare class PluginContext<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> {
     private _plugin;
-    constructor(plugin: Plugin_2<TConfig>);
+    constructor(plugin: Plugin_2<TConfig, TPluginApi>);
     get initialized(): boolean;
     get config(): TConfig;
     setup(callback: () => void): void;
+    api(data: TPluginApi): void;
     update(callback: (ts: number, dt: number) => void): void;
     render(callback: () => void): void;
     getViews(viewName: string): Array<View>;
     getView(viewName: string): View | undefined;
     getViewById(viewId: string): View | undefined;
-    useEventPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, config?: TConfig): EventPlugin<PluginConfig>;
+    useEventPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): EventPlugin<TConfig, TPluginApi>;
     emit<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
     on<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     onDataChanged(callback: (data: ChangedData) => void): void;
@@ -294,16 +470,18 @@ export declare class PluginContext<TConfig extends PluginConfig = PluginConfig> 
     subscribeToEvents(callback: (eventBus: EventBus) => void): void;
 }
 
-export declare type PluginFactory<TConfig extends PluginConfig = PluginConfig> = PluginClassFactory<TConfig> | PluginFunctionFactory<TConfig>;
+export declare type PluginFactory<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> = PluginClassFactory<TConfig, TPluginApi> | PluginFunctionFactory<TConfig, TPluginApi>;
 
 declare interface PluginFactoryStaticFields {
     pluginName: string;
     scope?: string;
 }
 
-declare interface PluginFunctionFactory<TConfig extends PluginConfig = PluginConfig> extends PluginFactoryStaticFields {
-    (context: PluginContext<TConfig>): void;
+declare interface PluginFunctionFactory<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> extends PluginFactoryStaticFields {
+    (context: PluginContext<TConfig, TPluginApi>): void;
 }
+
+declare type PluginId = string;
 
 export declare type Point = {
     x: number;
@@ -334,8 +512,9 @@ declare class PointerMoveEvent extends PointerEvent_2 {
 declare class PointerUpEvent extends PointerEvent_2 {
 }
 
-declare class PositionProp extends ViewProp<Vec2> {
+declare class PositionProp extends ViewProp<Vec2> implements ViewPosition {
     private _animateLayoutUpdateNextFrame;
+    private _parentScaleInverse;
     get x(): number;
     get y(): number;
     get initialX(): number;
@@ -349,31 +528,57 @@ declare class PositionProp extends ViewProp<Vec2> {
     isTransform(): boolean;
 }
 
+declare type ReadyCallback<TPluginApi extends PluginApi> = (pluginApi: TPluginApi) => void;
+
+declare interface RectSize {
+    width: number;
+    height: number;
+}
+
 declare class Registry {
+    private readonly _appEventBus;
+    private readonly _eventBus;
     private _plugins;
     private _views;
     private _viewsPerPlugin;
     private _viewsToBeCreated;
     private _viewsToBeRemoved;
     private _viewsCreatedInPreviousFrame;
+    private _layoutIdToViewMap;
+    private _eventPluginsPerPlugin;
+    constructor(appEventBus: EventBus, eventBus: EventBus);
     update(): void;
-    removeViewById(viewId: ViewId): void;
-    getViewById(viewId: string): View | undefined;
+    associateEventPluginWithPlugin(pluginId: PluginId, eventPluginId: PluginId): void;
+    private _handleRemovedViews;
+    private _getPluginNameForElement;
+    private _handleAddedViews;
+    private _createNewView;
+    private _createChildrenForView;
+    private _handleRemoveView;
+    removeViewById(viewId: ViewId, pluginId: PluginId): void;
+    private _unassignViewFromPlugin;
+    getViewById(viewId: string): CoreView | undefined;
+    private _getPluginById;
+    private _getPluginViewById;
+    reset(pluginName?: string, callback?: () => void): void;
+    private _resetPlugin;
     queueNodeToBeCreated(domEl: HTMLElement): void;
     queueNodeToBeRemoved(domEl: HTMLElement): void;
     notifyPluginAboutDataChange(event: DataChangedEvent): void;
     getPlugins(): ReadonlyArray<IPlugin>;
     getRenderablePlugins(): ReadonlyArray<Plugin_2>;
-    getPluginByName(pluginName: string): IPlugin | undefined;
-    createPlugin<TConfig extends PluginConfig>(pluginFactory: PluginFactory<TConfig>, eventBus: EventBus, config?: TConfig): IPlugin<TConfig>;
-    getViews(): ReadonlyArray<View>;
-    createView(domEl: HTMLElement, name: string): View;
-    addViewToPlugin(view: View, plugin: IPlugin): void;
-    getViewsForPlugin(plugin: IPlugin): Array<View>;
-    getViewsByNameForPlugin(plugin: IPlugin, viewName: string): Array<View>;
+    getPluginByName(pluginName: string, pluginKey?: string): IPlugin | undefined;
+    getPluginsByName(pluginName: string, pluginKey?: string): IPlugin[];
+    hasPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>): boolean;
+    createPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, eventBus: EventBus, config?: TConfig): IPlugin<TConfig, TPluginApi>;
+    getViews(): ReadonlyArray<CoreView>;
+    createView(domEl: HTMLElement, name: string): CoreView;
+    assignViewToPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(view: View, plugin: IPlugin<TConfig, TPluginApi>): void;
+    getViewsForPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(plugin: IPlugin<TConfig, TPluginApi>): Array<CoreView>;
+    getViewsByNameForPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(plugin: IPlugin<TConfig, TPluginApi>, viewName: string): Array<CoreView>;
 }
 
-declare class RotationProp extends ViewProp<number> {
+declare class RotationProp extends ViewProp<number> implements ViewRotation {
     private _unit;
     get degrees(): number;
     get radians(): number;
@@ -385,13 +590,15 @@ declare class RotationProp extends ViewProp<number> {
     isTransform(): boolean;
 }
 
-declare class ScaleProp extends ViewProp<Vec2> {
+declare class ScaleProp extends ViewProp<Vec2> implements ViewScale {
+    private _animateLayoutUpdateNextFrame;
     get x(): number;
     get y(): number;
-    set(value: Partial<Point>, runAnimation?: boolean): void;
+    set(value: Partial<Point> | number, runAnimation?: boolean): void;
     setWithSize(value: Partial<Size>, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
+    private _runLayoutTransition;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -401,7 +608,7 @@ export declare type Size = {
     height: number;
 };
 
-declare class SizeProp extends ViewProp<Vec2> {
+declare class SizeProp extends ViewProp<Vec2> implements ViewSize {
     get width(): number;
     get height(): number;
     get widthAfterScale(): number;
@@ -409,6 +616,8 @@ declare class SizeProp extends ViewProp<Vec2> {
     get initialWidth(): number;
     get initialHeight(): number;
     set(value: Partial<Size>, runAnimation?: boolean): void;
+    setWidth(value: number, runAnimation?: boolean): void;
+    setHeight(value: number, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
     projectStyles(): string;
@@ -496,65 +705,79 @@ declare class Vec2 {
     static add(v1: Vec2, v2: Vec2): Vec2;
 }
 
-export declare class View {
-    readonly id: string;
-    name: string;
-    element: HTMLElement;
-    styles: Partial<Record<keyof CSSStyleDeclaration, string>>;
-    private _viewProps;
-    private _rect;
-    private _previousRect;
-    private _onAddCallbacks;
-    private _onRemoveCallback;
-    private _skipFirstRenderFrame;
-    private _layoutTransition;
-    constructor(element: HTMLElement, name: string);
-    get position(): PositionProp;
-    get scale(): ScaleProp;
-    get rotation(): RotationProp;
-    get size(): SizeProp;
-    get opacity(): OpacityProp;
-    get data(): Record<string, string>;
-    get onAddCallbacks(): OnAddCallback | undefined;
-    get onRemoveCallback(): OnRemoveCallback | undefined;
-    get isLayoutTransitionEnabled(): boolean;
-    layoutTransition(enabled: boolean): void;
-    get _isRemoved(): boolean;
-    setPluginId(id: string): void;
-    hasElement(element: HTMLElement): boolean;
-    getScroll(): {
-        y: number;
-        x: number;
-    };
-    intersects(x: number, y: number): boolean;
-    overlapsWith(view: View): boolean;
-    distanceTo(view: View): number;
-    read(): void;
-    get rect(): ViewRect;
-    get previousRect(): ViewRect;
-    update(ts: number, dt: number): void;
-    render(): void;
-    private _getUserStyles;
-    markAsAdded(): void;
-    onAdd(callback: OnAddCallback): void;
-    onRemove(callback: OnRemoveCallback): void;
-    get viewProps(): ViewPropCollection;
-    _copyAnimatorsToAnotherView(view: View): void;
+declare interface VHBorderRadiusValue {
+    v: BorderRadiusValue;
+    h: BorderRadiusValue;
 }
 
+export declare interface View {
+    id: ViewId;
+    name: string;
+    data: ViewDataProp;
+    element: HTMLElement;
+    styles: Partial<Record<keyof CSSStyleDeclaration, string>>;
+    distanceTo(view: View): number;
+    onAdd(callback: OnAddCallback): void;
+    onRemove(callback: OnRemoveCallback): void;
+    layoutTransition(enabled: boolean): void;
+    inverseEffect(enabled: boolean): void;
+    getScroll(): Point;
+    overlapsWith(view: View): boolean;
+    intersects(x: number, y: number): boolean;
+    hasElement(element: HTMLElement): boolean;
+    position: ViewPosition;
+    opacity: ViewOpacity;
+    borderRadius: ViewBorderRadius;
+    size: ViewSize;
+    scale: ViewScale;
+    rotation: ViewRotation;
+    origin: ViewOrigin;
+}
+
+declare interface ViewBorderRadius extends AnimatableProp {
+    value: BorderRadiusValue;
+    set(value: string | Partial<BorderRadiusValueInput>, runAnimation?: boolean): void;
+}
+
+declare type ViewDataProp = Record<string, string>;
+
 declare type ViewId = string;
+
+declare interface ViewOpacity extends AnimatableProp {
+    value: number;
+    set(value: number, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
+}
+
+declare interface ViewOrigin {
+    x: number;
+    y: number;
+    set(value: Partial<Point>): void;
+    reset(): void;
+}
+
+declare interface ViewPosition extends AnimatableProp {
+    x: number;
+    y: number;
+    initialX: number;
+    initialY: number;
+    set(value: Partial<Point_2>, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
+    progressTo(target: Partial<Point_2>): number;
+}
 
 declare abstract class ViewProp<TValue> implements IViewProp {
     protected _animatorProp: AnimatorProp;
     protected _animator: Animator<TValue>;
     protected _initialValue: TValue;
-    protected _previousValue: TValue;
-    protected _targetValue: TValue;
-    protected _currentValue: TValue;
+    _previousValue: TValue;
+    _targetValue: TValue;
+    _currentValue: TValue;
     protected _hasChanged: boolean;
-    protected _view: View;
+    protected _view: CoreView;
     protected _animatorFactory: AnimatorFactory<TValue>;
-    constructor(animatorFactory: AnimatorFactory<TValue>, initialValue: TValue, parentView: View);
+    constructor(animatorFactory: AnimatorFactory<TValue>, initialValue: TValue, parentView: CoreView);
+    get isAnimating(): boolean;
     getAnimator(): Animator<TValue>;
     get animator(): AnimatorProp;
     protected get _rect(): ViewRect;
@@ -569,16 +792,24 @@ declare abstract class ViewProp<TValue> implements IViewProp {
 
 declare class ViewPropCollection {
     private _props;
-    constructor(view: View);
+    constructor(view: CoreView);
     allProps(): Array<IViewProp>;
-    allPropNames(): string[];
-    getPropByName(propName: string): IViewProp | undefined;
+    allPropNames(): ViewPropName[];
+    getPropByName(propName: ViewPropName): IViewProp | undefined;
     get position(): PositionProp;
     get scale(): ScaleProp;
     get rotation(): RotationProp;
     get size(): SizeProp;
     get opacity(): OpacityProp;
+    get borderRadius(): BorderRadiusProp;
+    get origin(): OriginProp;
 }
+
+declare type ViewPropName = 'position' | 'scale' | 'rotation' | 'size' | 'origin' | 'opacity' | 'borderRadius';
+
+declare type ViewPropNameToElementPropValue = {
+    [K in ViewPropName]: K extends 'opacity' ? ElementPropValue<number> : K extends 'borderRadius' ? ElementPropValue<BorderRadiusValue> : never;
+};
 
 declare interface ViewRect {
     viewportOffset: {
@@ -591,10 +822,36 @@ declare interface ViewRect {
         left: number;
         top: number;
     };
-    size: {
-        width: number;
-        height: number;
-    };
+    size: RectSize;
+}
+
+declare interface ViewRotation extends AnimatableProp {
+    degrees: number;
+    radians: number;
+    setDegrees(value: number, runAnimation?: boolean): void;
+    setRadians(value: number, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
+}
+
+declare interface ViewScale extends AnimatableProp {
+    x: number;
+    y: number;
+    set(value: Partial<Point> | number, runAnimation?: boolean): void;
+    setWithSize(value: Partial<Size>, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
+}
+
+declare interface ViewSize extends AnimatableProp {
+    width: number;
+    height: number;
+    widthAfterScale: number;
+    heightAfterScale: number;
+    initialWidth: number;
+    initialHeight: number;
+    set(value: Partial<Size>, runAnimation?: boolean): void;
+    setWidth(value: number, runAnimation?: boolean): void;
+    setHeight(value: number, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
 }
 
 export { }

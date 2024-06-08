@@ -1,6 +1,19 @@
-import { ViewProp } from './ViewProp'
+import { ElementPropValue } from '../element-props/ElementPropValue'
+import { almostEqual } from '../utils/Math'
+import { AnimatableProp, ViewProp } from './ViewProp'
 
-export class OpacityProp extends ViewProp<number> {
+// Public prop interface
+export interface ViewOpacity extends AnimatableProp {
+  value: number
+  set(value: number, runAnimation?: boolean): void
+  reset(runAnimation?: boolean): void
+}
+
+export class OpacityProp extends ViewProp<number> implements ViewOpacity {
+  setFromElementPropValue(value: ElementPropValue<number>): void {
+    this._setTarget(value.value, true)
+  }
+
   get value() {
     return this._currentValue
   }
@@ -14,7 +27,10 @@ export class OpacityProp extends ViewProp<number> {
   }
 
   update(ts: number, dt: number): void {
-    if (this._targetValue === this._currentValue) return
+    if (almostEqual(this._targetValue, this._currentValue)) {
+      this._hasChanged = !almostEqual(this._targetValue, this._initialValue)
+      return
+    }
 
     this._currentValue = this._animator.update({
       animatorProp: this._animatorProp,

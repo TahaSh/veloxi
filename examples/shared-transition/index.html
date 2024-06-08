@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shared Transition</title>
+  </head>
+  <body>
+    <ul class="tabs">
+      <li class="tab">
+        A
+        <div
+          class="underline"
+          data-vel-plugin="SharedLayoutPlugin"
+          data-vel-view="underline"
+          data-vel-layout-id="line"
+        ></div>
+      </li>
+      <li class="tab">B</li>
+      <li class="tab">C</li>
+    </ul>
+    <script type="module" src="./main.ts"></script>
+    <script type="module">
+      document.body.addEventListener('click', (e) => {
+        const target = e.target
+        if (target.classList.contains('tab')) {
+          const underline = document.querySelector('.underline')
+          underline.remove()
+          target.appendChild(underline)
+        }
+      })
+    </script>
+  </body>
+</html>

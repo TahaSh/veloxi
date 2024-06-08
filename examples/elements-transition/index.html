@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elements transition</title>
+  </head>
+  <body>
+    <template id="list-a">
+      <div
+        class="element element-a"
+        data-vel-plugin="ElementsTransitionPlugin"
+        data-vel-view="item"
+        data-vel-layout-id="list-a"
+      >
+        A
+      </div>
+      <div
+        class="element element-b"
+        data-vel-plugin="ElementsTransitionPlugin"
+        data-vel-view="item"
+        data-vel-layout-id="list-a"
+      >
+        B
+      </div>
+      <div
+        class="element element-c"
+        data-vel-plugin="ElementsTransitionPlugin"
+        data-vel-view="item"
+        data-vel-layout-id="list-a"
+      >
+        C
+      </div>
+    </template>
+    <template id="list-b">
+      <div
+        class="element element-a"
+        data-vel-plugin="ElementsTransitionPlugin"
+        data-vel-view="item"
+        data-vel-layout-id="list-b"
+      >
+        D
+      </div>
+      <div
+        class="element element-b"
+        data-vel-plugin="ElementsTransitionPlugin"
+        data-vel-view="item"
+        data-vel-layout-id="list-b"
+      >
+        E
+      </div>
+      <div
+        class="element element-c"
+        data-vel-plugin="ElementsTransitionPlugin"
+        data-vel-view="item"
+        data-vel-layout-id="list-b"
+      >
+        F
+      </div>
+    </template>
+    <div id="container-a" class="container"></div>
+    <div id="container-b" class="container"></div>
+    <script type="module" src="./main.ts"></script>
+    <script>
+      function initList(listId, containerId) {
+        let index = 0
+        const container = document.getElementById(containerId)
+        const list = document.getElementById(listId)
+        const elements = list.content.querySelectorAll('.element')
+        Array.from(elements).forEach((element) => {
+          element.remove()
+        })
+        showElement()
+        function showElement() {
+          container.innerHTML = ''
+          container.append(elements[index].cloneNode(true))
+        }
+        container.addEventListener('click', () => {
+          index = (index + 1) % elements.length
+          showElement()
+        })
+      }
+      initList('list-a', 'container-a')
+      initList('list-b', 'container-b')
+    </script>
+  </body>
+</html>

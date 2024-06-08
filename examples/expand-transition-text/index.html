@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expand transition (text)</title>
+  </head>
+  <body>
+    <div
+      class="card"
+      data-vel-plugin="ExpandTransitionPlugin"
+      data-vel-view="container"
+    >
+      <div class="header">Header</div>
+      <div class="text" data-vel-view="text">
+        <div>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Itaque
+          temporibus laboriosam inventore autem consequatur officiis praesentium
+          eum unde perferendis consequuntur? Nihil inventore dicta sequi quos
+          voluptatum tempora exercitationem fugit earum?
+        </div>
+      </div>
+      <div class="footer" data-vel-view="footer">Footer</div>
+    </div>
+    <script type="module" src="./main.ts"></script>
+    <script type="module">
+      document.body.addEventListener('click', () => {
+        document.querySelector('.card').classList.toggle('toggled')
+      })
+    </script>
+  </body>
+</html>

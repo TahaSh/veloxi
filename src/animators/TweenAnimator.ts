@@ -1,8 +1,11 @@
 import { Vec2 } from '../math'
+import { CSSNumber, createCSSNumber } from '../utils/CSSNumber'
+import { almostEqual } from '../utils/Math'
 import { linear } from './easing'
 import {
   Animator,
   AnimatorUpdateData,
+  CSSNumbersAnimatorUpdateData,
   NumberAnimatorUpdateData,
   Vec2AnimatorUpdateData
 } from './types'
@@ -13,7 +16,7 @@ export interface TweenAnimatorConfig {
 }
 
 export const tweenConfigDefaults: TweenAnimatorConfig = {
-  duration: 500,
+  duration: 350,
   ease: linear
 }
 
@@ -39,13 +42,41 @@ export class Vec2TweenAnimator extends TweenAnimator<Vec2> {
       this._startTime = ts
     }
     const progress = Math.min(1, (ts - this._startTime) / this._config.duration)
-    if (progress >= 1) {
-      animatorProp.callCompleteCallback()
+    if (almostEqual(progress, 1)) {
+      requestAnimationFrame(() => {
+        animatorProp.callCompleteCallback()
+      })
+      return target
     }
     return Vec2.add(
       initial,
       Vec2.scale(Vec2.sub(target, initial), this._config.ease(progress))
     )
+  }
+}
+
+export class CSSNumbersTweenAnimator extends TweenAnimator<CSSNumber[]> {
+  update({ animatorProp, initial, target, ts }: CSSNumbersAnimatorUpdateData) {
+    if (!this._startTime) {
+      this._startTime = ts
+    }
+    const progress = Math.min(1, (ts - this._startTime) / this._config.duration)
+    if (almostEqual(progress, 1)) {
+      requestAnimationFrame(() => {
+        animatorProp.callCompleteCallback()
+      })
+      return target
+    }
+
+    return initial.map((initialValue, index) => {
+      const targetValue = target[index]
+      const unit =
+        targetValue.value === 0 ? initialValue.unit : targetValue.unit
+      const value =
+        initialValue.value +
+        this._config.ease(progress) * (target[index].value - initialValue.value)
+      return createCSSNumber(`${value}${unit}`)
+    })
   }
 }
 
@@ -55,8 +86,11 @@ export class NumberTweenAnimator extends TweenAnimator<number> {
       this._startTime = ts
     }
     const progress = Math.min(1, (ts - this._startTime) / this._config.duration)
-    if (progress >= 1) {
-      animatorProp.callCompleteCallback()
+    if (almostEqual(progress, 1)) {
+      requestAnimationFrame(() => {
+        animatorProp.callCompleteCallback()
+      })
+      return target
     }
     return initial + (target - initial) * this._config.ease(progress)
   }

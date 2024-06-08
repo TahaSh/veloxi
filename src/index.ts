@@ -10,7 +10,7 @@ export {
   type PluginFactory
 } from './core/Plugin'
 export { EventBus } from './core/EventBus'
-export { View } from './core/View'
+export { type View } from './core/View'
 
 // ************************************************************
 // ** Prop Types
@@ -25,6 +25,10 @@ export {
   SwipeEventPlugin,
   SwipeEvent
 } from './builtin-plugins/SwipeEventPlugin'
+export {
+  ClickEventPlugin,
+  ClickEvent
+} from './builtin-plugins/ClickEventPlugin'
 
 export { DataChangedEvent } from './builtin-events/DataEvents'
 

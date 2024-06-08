@@ -40,9 +40,14 @@ export class DomObserver {
           typeof node.parentElement.dataset.velAdded !== 'undefined'
         )
           return
-        this._eventBus.emitEvent(NodeAddedEvent, { node })
+        let nodeToBeAdded: HTMLElement | null = node
+        if (!node.dataset.velView) {
+          nodeToBeAdded = node.querySelector('[data-vel-view][data-vel-plugin]')
+        }
+        if (!nodeToBeAdded) return
+        this._eventBus.emitEvent(NodeAddedEvent, { node: nodeToBeAdded })
         const nestedChildren =
-          node.querySelectorAll<HTMLElement>('[data-vel-plugin]')
+          nodeToBeAdded.querySelectorAll<HTMLElement>('[data-vel-plugin]')
         if (nestedChildren.length) {
           nestedChildren.forEach((element) => {
             this._eventBus.emitEvent(NodeAddedEvent, { node: element })

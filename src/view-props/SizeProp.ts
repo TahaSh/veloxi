@@ -1,8 +1,22 @@
 import { Vec2 } from '../math'
-import { ViewProp } from './ViewProp'
+import { AnimatableProp, ViewProp } from './ViewProp'
 import { Size } from './types'
 
-export class SizeProp extends ViewProp<Vec2> {
+// Public prop interface
+export interface ViewSize extends AnimatableProp {
+  width: number
+  height: number
+  widthAfterScale: number
+  heightAfterScale: number
+  initialWidth: number
+  initialHeight: number
+  set(value: Partial<Size>, runAnimation?: boolean): void
+  setWidth(value: number, runAnimation?: boolean): void
+  setHeight(value: number, runAnimation?: boolean): void
+  reset(runAnimation?: boolean): void
+}
+
+export class SizeProp extends ViewProp<Vec2> implements ViewSize {
   get width() {
     return this._currentValue.x
   }
@@ -35,6 +49,24 @@ export class SizeProp extends ViewProp<Vec2> {
       height: this._currentValue.y
     }
     const newValue = { ...currentValue, ...value }
+    this._setTarget(new Vec2(newValue.width, newValue.height), runAnimation)
+  }
+
+  setWidth(value: number, runAnimation: boolean = true) {
+    const currentValue = {
+      width: this._currentValue.x,
+      height: this._currentValue.y
+    }
+    const newValue = { ...currentValue, width: value }
+    this._setTarget(new Vec2(newValue.width, newValue.height), runAnimation)
+  }
+
+  setHeight(value: number, runAnimation: boolean = true) {
+    const currentValue = {
+      width: this._currentValue.x,
+      height: this._currentValue.y
+    }
+    const newValue = { ...currentValue, height: value }
     this._setTarget(new Vec2(newValue.width, newValue.height), runAnimation)
   }
 

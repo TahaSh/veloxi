@@ -1,6 +1,15 @@
-import { ViewProp } from './ViewProp'
+import { AnimatableProp, ViewProp } from './ViewProp'
 
-export class RotationProp extends ViewProp<number> {
+// Public prop interface
+export interface ViewRotation extends AnimatableProp {
+  degrees: number
+  radians: number
+  setDegrees(value: number, runAnimation?: boolean): void
+  setRadians(value: number, runAnimation?: boolean): void
+  reset(runAnimation?: boolean): void
+}
+
+export class RotationProp extends ViewProp<number> implements ViewRotation {
   private _unit = 'deg'
 
   get degrees() {

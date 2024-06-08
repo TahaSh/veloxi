@@ -9,3 +9,9 @@ export function valueAtPercentage(
 ): number {
   return from + (to - from) * percentage
 }
+
+export function almostEqual(a: number, b: number): boolean {
+  const EPSILON = 0.01
+  const diff = a - b
+  return Math.abs(diff) <= EPSILON
+}

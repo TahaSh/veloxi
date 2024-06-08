@@ -8,9 +8,11 @@ export class AnimatorProp {
   private _viewProp: IViewProp
   private _completeCallback?: CompleteCallback
   private _updateCallback?: UpdateCallback
+  private _isAnimating: boolean
 
   constructor(viewProp: IViewProp) {
     this._viewProp = viewProp
+    this._isAnimating = false
   }
 
   set<TAnimatorName extends keyof AnimatorConfigMap>(
@@ -28,8 +30,17 @@ export class AnimatorProp {
     this._completeCallback = callback
   }
 
+  get isAnimating() {
+    return this._isAnimating
+  }
+
+  markAsAnimating() {
+    this._isAnimating = true
+  }
+
   callCompleteCallback() {
     this._completeCallback?.()
+    this._isAnimating = false
   }
 
   onUpdate(callback: UpdateCallback) {

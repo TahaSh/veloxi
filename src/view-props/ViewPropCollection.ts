@@ -1,16 +1,31 @@
-import { View } from '..'
-import { NumberAnimatorFactory, Vec2AnimatorFactory } from '../animators'
+import {
+  CSSNumbersAnimatorFactory,
+  NumberAnimatorFactory,
+  Vec2AnimatorFactory
+} from '../animators'
+import { CoreView } from '../core/View'
 import { Vec2 } from '../math'
+import { BorderRadiusProp } from './BorderRadiusProp'
 import { OpacityProp } from './OpacityProp'
+import { OriginProp } from './OriginProp'
 import { PositionProp } from './PositionProp'
 import { RotationProp } from './RotationProp'
 import { ScaleProp } from './ScaleProp'
 import { SizeProp } from './SizeProp'
 import { IViewProp } from './ViewProp'
 
+export type ViewPropName =
+  | 'position'
+  | 'scale'
+  | 'rotation'
+  | 'size'
+  | 'origin'
+  | 'opacity'
+  | 'borderRadius'
+
 export class ViewPropCollection {
-  private _props = new Map<string, IViewProp>()
-  constructor(view: View) {
+  private _props = new Map<ViewPropName, IViewProp>()
+  constructor(view: CoreView) {
     this._props.set(
       'position',
       new PositionProp(new Vec2AnimatorFactory(), new Vec2(0, 0), view)
@@ -37,7 +52,34 @@ export class ViewPropCollection {
 
     this._props.set(
       'opacity',
-      new OpacityProp(new NumberAnimatorFactory(), 1, view)
+      new OpacityProp(
+        new NumberAnimatorFactory(),
+        view.elementReader.opacity.value,
+        view
+      )
+    )
+
+    this._props.set(
+      'borderRadius',
+      new BorderRadiusProp(
+        new CSSNumbersAnimatorFactory(),
+        [
+          view.elementReader.borderRadius.value.topLeft,
+          view.elementReader.borderRadius.value.topRight,
+          view.elementReader.borderRadius.value.bottomRight,
+          view.elementReader.borderRadius.value.bottomLeft
+        ],
+        view
+      )
+    )
+
+    this._props.set(
+      'origin',
+      new OriginProp(
+        new Vec2AnimatorFactory(),
+        view.elementReader.origin.value,
+        view
+      )
     )
   }
   allProps(): Array<IViewProp> {
@@ -46,7 +88,7 @@ export class ViewPropCollection {
   allPropNames() {
     return Array.from(this._props.keys())
   }
-  getPropByName(propName: string): IViewProp | undefined {
+  getPropByName(propName: ViewPropName): IViewProp | undefined {
     return this._props.get(propName)
   }
   get position(): PositionProp {
@@ -63,5 +105,11 @@ export class ViewPropCollection {
   }
   get opacity(): OpacityProp {
     return this._props.get('opacity') as OpacityProp
+  }
+  get borderRadius(): BorderRadiusProp {
+    return this._props.get('borderRadius') as BorderRadiusProp
+  }
+  get origin(): OriginProp {
+    return this._props.get('origin') as OriginProp
   }
 }

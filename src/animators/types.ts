@@ -1,4 +1,5 @@
 import { Vec2 } from '../math'
+import { CSSNumber } from '../utils/CSSNumber'
 import { AnimatorProp } from '../view-props/AnimatorProp'
 import { DynamicAnimatorConfig } from './DynamicAnimator'
 import { SpringAnimatorConfig } from './SpringAnimator'
@@ -15,6 +16,7 @@ export interface AnimatorUpdateData<TValue> {
 
 export type Vec2AnimatorUpdateData = AnimatorUpdateData<Vec2>
 export type NumberAnimatorUpdateData = AnimatorUpdateData<number>
+export type CSSNumbersAnimatorUpdateData = AnimatorUpdateData<CSSNumber[]>
 
 type AnimatorName = keyof AnimatorConfigMap
 

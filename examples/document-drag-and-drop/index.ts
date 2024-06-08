@@ -48,6 +48,7 @@ const DocumentDargPlugin: PluginFactory = (context) => {
       view.position.setAnimator('spring', { stiffness: 0.3 })
       view.opacity.setAnimator('tween')
       view.layoutTransition(true)
+      view.inverseEffect(false)
       view.onRemove((v, done) => {
         v.styles.zIndex = '-1'
         v.opacity.set(0)
@@ -92,7 +93,7 @@ const DocumentDargPlugin: PluginFactory = (context) => {
           x: view.position.x + view.size.widthAfterScale / 2,
           y: view.position.y + view.size.heightAfterScale / 2
         })
-        view.scale.set({ x: 0, y: 0 })
+        view.scale.set(0)
         view.opacity.animator.onComplete(() => {
           done()
         })
@@ -204,7 +205,7 @@ const DocumentDargPlugin: PluginFactory = (context) => {
     )
 
     const clampedScale = Utils.clamp(1 - progress, 0.35, 1)
-    draggingDocument.scale.set({ x: clampedScale, y: clampedScale }, false)
+    draggingDocument.scale.set(clampedScale, false)
 
     const clampedDegrees = Utils.clamp(-20 * progress, -20, 20)
     draggingDocument.rotation.setDegrees(clampedDegrees)

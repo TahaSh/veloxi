@@ -7,7 +7,9 @@ export class InstantAnimator<TValue> implements Animator<TValue> {
     return this._config
   }
   update(data: AnimatorUpdateData<TValue>): TValue {
-    data.animatorProp.callCompleteCallback()
+    requestAnimationFrame(() => {
+      data.animatorProp.callCompleteCallback()
+    })
     return data.target
   }
 }
