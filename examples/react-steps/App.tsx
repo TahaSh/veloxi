@@ -37,11 +37,32 @@ function App() {
 
   return (
     <>
-      <button className="bg-white rounded-lg px-5 py-2" onClick={() => {
-        app.reset('StepsPlugin')
-      }}>
-        Reset
-      </button>
+      <div className="mb-5 flex gap-x-2.5">
+        <button className="bg-white rounded-lg px-5 py-2" onClick={() => {
+          app.reset('StepsPlugin')
+        }}>
+          Reset Steps
+        </button>
+        <button className="bg-white rounded-lg px-5 py-2" onClick={() => {
+          app.destroy('StepsPlugin')
+        }}>
+          Destroy Steps
+        </button>
+        <button className="bg-white rounded-lg px-5 py-2" onClick={() => {
+          app.destroy()
+        }}>
+          Destroy all
+        </button>
+        <button className="bg-white rounded-lg px-5 py-2" onClick={() => {
+          app.addPlugin(StepsPlugin)
+          app.onPluginEvent(StepsPlugin, StepsEvent, ({ testValue }) => {
+            console.log('testValue value is>>>', testValue);
+          })
+          app.addPlugin(DraggablePlugin)
+        }}>
+          Start all
+        </button>
+      </div>
       <div className="w-[100px] h-[100px] bg-red-700 rounded-full"
         data-vel-plugin="DraggablePlugin"
         data-vel-view="item"

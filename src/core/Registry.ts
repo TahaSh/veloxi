@@ -204,6 +204,63 @@ export class Registry {
     return this.getViewsForPlugin(plugin).find((view) => view.id === viewId)
   }
 
+  public destroy(pluginName?: string, callback?: () => void) {
+    if (!pluginName) {
+      // Destroy all
+      this._destroyAll()
+      return
+    }
+    let plugins: IPlugin[] = [] as IPlugin[]
+    if (pluginName && pluginName.length > 0) {
+      const plugin = this.getPluginByName(pluginName)
+      if (plugin) {
+        const eventPluginIds = this._eventPluginsPerPlugin.get(plugin.id) || []
+        const eventPlugins = eventPluginIds
+          .map((eventPluginId) => this._getPluginById(eventPluginId))
+          .filter((plugin): plugin is IPlugin => typeof plugin !== 'undefined')
+        plugins.push(plugin)
+        plugins.push(...eventPlugins)
+      }
+    } else {
+      plugins = this._plugins
+    }
+
+    requestAnimationFrame(() => {
+      plugins.forEach((plugin) => {
+        this._destroyPlugin(plugin)
+      })
+      requestAnimationFrame(() => {
+        callback?.()
+      })
+    })
+  }
+
+  private _destroyPlugin(plugin: IPlugin<PluginConfig, PluginApi>) {
+    const viewsInPlugin = this.getViewsForPlugin(plugin)
+    viewsInPlugin.forEach((view) => {
+      if (view.layoutId) {
+        this._layoutIdToViewMap.delete(view.layoutId)
+      }
+      view.destroy()
+    })
+    this._views = this._views.filter(
+      (view) => !viewsInPlugin.find((v) => v.id === view.id)
+    )
+    this._viewsPerPlugin.delete(plugin.id)
+    this._plugins = this._plugins.filter((p) => p.id !== plugin.id)
+  }
+
+  private _destroyAll() {
+    this._plugins = []
+    this._views = []
+    this._viewsPerPlugin.clear()
+    this._viewsToBeCreated = []
+    this._viewsToBeRemoved = []
+    this._viewsCreatedInPreviousFrame = []
+    this._layoutIdToViewMap.clear()
+    this._eventPluginsPerPlugin.clear()
+  }
+
   public reset(pluginName?: string, callback?: () => void) {
     let plugins: IPlugin[] = [] as IPlugin[]
     if (pluginName && pluginName.length > 0) {

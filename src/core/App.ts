@@ -61,6 +61,10 @@ class App {
     this._registry.reset(pluginName, callback)
   }
 
+  destroy(pluginName?: string, callback?: () => void) {
+    this._registry.destroy(pluginName, callback)
+  }
+
   getPlugin<TPluginApi extends PluginApi>(
     pluginFactory: PluginFactory<PluginConfig> | string,
     pluginKey?: string
