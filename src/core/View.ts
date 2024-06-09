@@ -89,7 +89,7 @@ export class CoreView {
     this._viewProps = new ViewPropCollection(this)
     this._skipFirstRenderFrame = true
     this._layoutId = element.dataset.velLayoutId
-    this._layoutTransition = !!this._layoutId
+    this._layoutTransition = false
     this._registry = registry
     this.element.dataset.velViewId = this.id
     this._temporaryView = false
