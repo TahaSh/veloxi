@@ -1681,6 +1681,21 @@ class pe {
       }
     });
   }
+  setAnimatorsFromParent() {
+    let t = this._parent;
+    for (; t && !t._inverseEffect; )
+      t = t._parent;
+    if (t) {
+      if (this.position.animator.name === "instant") {
+        const e = t.viewProps.position.getAnimator();
+        this.position.setAnimator(e.name, e.config);
+      }
+      if (this.scale.animator.name === "instant") {
+        const e = t.viewProps.scale.getAnimator();
+        this.scale.setAnimator(e.name, e.config);
+      }
+    }
+  }
   get _isRemoved() {
     return !this._registry.getViewById(this.id);
   }
@@ -1826,7 +1841,7 @@ class fe {
       if (!r)
         return;
       let u;
-      n && this._layoutIdToViewMap.has(n) ? (u = this._layoutIdToViewMap.get(n), u.setElement(e), u.setPluginId(r.id), this._createChildrenForView(u, r)) : u = this._createNewView(e, s, r), r.notifyAboutViewAdded(u);
+      n && this._layoutIdToViewMap.has(n) ? (u = this._layoutIdToViewMap.get(n), u.setElement(e), u.setPluginId(r.id), this._createChildrenForView(u, r)) : u = this._createNewView(e, s, r), u.isInverseEffectEnabled && u.setAnimatorsFromParent(), r.notifyAboutViewAdded(u);
     }), this._viewsToBeCreated = []);
   }
   _createNewView(t, e, i) {

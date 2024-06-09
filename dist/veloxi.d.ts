@@ -174,6 +174,7 @@ declare class CoreView {
     get isInverseEffectEnabled(): boolean;
     layoutTransition(enabled: boolean): void;
     inverseEffect(enabled: boolean): void;
+    setAnimatorsFromParent(): void;
     get _isRemoved(): boolean;
     setPluginId(id: string): void;
     hasElement(element: HTMLElement): boolean;
