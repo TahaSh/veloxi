@@ -1576,7 +1576,7 @@ class pe {
     a(this, "_elementReader");
     a(this, "_temporaryView");
     a(this, "_inverseEffect");
-    this.id = pt(), this.name = e, this.element = t, this._elementReader = $(t), this._previousRect = this._elementReader.rect, this._viewProps = new ge(this), this._skipFirstRenderFrame = !0, this._layoutId = t.dataset.velLayoutId, this._layoutTransition = !!this._layoutId, this._registry = i, this.element.dataset.velViewId = this.id, this._temporaryView = !1, this._inverseEffect = !1;
+    this.id = pt(), this.name = e, this.element = t, this._elementReader = $(t), this._previousRect = this._elementReader.rect, this._viewProps = new ge(this), this._skipFirstRenderFrame = !0, this._layoutId = t.dataset.velLayoutId, this._layoutTransition = !1, this._registry = i, this.element.dataset.velViewId = this.id, this._temporaryView = !1, this._inverseEffect = !1;
   }
   destroy() {
     this.element.removeAttribute("data-vel-view-id"), this.element.removeAttribute("data-vel-plugin-id");
