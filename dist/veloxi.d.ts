@@ -80,10 +80,13 @@ declare class App {
     private _render;
 }
 
-declare class BorderRadiusProp extends ViewProp<CSSNumber[]> implements ViewBorderRadius {
+declare class BorderRadiusProp extends ViewProp<CSSNumber[], VHBorderRadiusValue> implements ViewBorderRadius {
     private _invertedBorderRadius?;
     private _forceStyleUpdateThisFrame;
+    private _updateWithScale;
     setFromElementPropValue(value: ElementPropValue<BorderRadiusValue>): void;
+    enableUpdateWithScale(): void;
+    disableUpdateWithScale(): void;
     get value(): BorderRadiusValue;
     get invertedBorderRadius(): VHBorderRadiusValue | undefined;
     set(value: string | Partial<BorderRadiusValueInput>, runAnimation?: boolean): void;
@@ -91,6 +94,8 @@ declare class BorderRadiusProp extends ViewProp<CSSNumber[]> implements ViewBord
     update(ts: number, dt: number): void;
     applyScaleInverse(): void;
     private _applyScaleInverse;
+    get shouldRender(): boolean;
+    get renderValue(): VHBorderRadiusValue;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -151,6 +156,7 @@ declare class CoreView {
     private _elementReader;
     private _temporaryView;
     private _inverseEffect;
+    private _renderNextTick;
     constructor(element: HTMLElement, name: string, registry: Registry);
     destroy(): void;
     get elementReader(): ElementReader;
@@ -189,6 +195,7 @@ declare class CoreView {
     _updatePreviousRect(): void;
     setAsTemporaryView(): void;
     get isTemporaryView(): boolean;
+    get shouldRender(): boolean;
     render(): void;
     private _getUserStyles;
     markAsAdded(): void;
@@ -399,7 +406,9 @@ declare interface IViewProp {
     projectStyles(): string;
     isTransform(): boolean;
     hasChanged(): boolean;
+    destroy(): void;
     isAnimating: boolean;
+    shouldRender: boolean;
 }
 
 declare function minBy<T>(items: Array<T>, predicate: (item: T) => number): T;
@@ -421,6 +430,8 @@ declare class OpacityProp extends ViewProp<number> implements ViewOpacity {
     set(value: number, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
+    get shouldRender(): boolean;
+    get renderValue(): number;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -430,6 +441,8 @@ declare class OriginProp extends ViewProp<Vec2> implements ViewOrigin {
     get y(): number;
     set(value: Partial<Point>): void;
     reset(): void;
+    get shouldRender(): boolean;
+    get renderValue(): Vec2;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -437,6 +450,7 @@ declare class OriginProp extends ViewProp<Vec2> implements ViewOrigin {
 declare class Plugin_2<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> extends IPlugin<TConfig, TPluginApi> {
     isRenderable(): boolean;
     isInitialized(): boolean;
+    get initialized(): boolean;
     update(ts: number, dt: number): void;
     render(): void;
     addView(view: CoreView): void;
@@ -526,6 +540,8 @@ declare class PositionProp extends ViewProp<Vec2> implements ViewPosition {
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
     private _runLayoutTransition;
+    get shouldRender(): boolean;
+    get renderValue(): Vec2;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -591,6 +607,8 @@ declare class RotationProp extends ViewProp<number> implements ViewRotation {
     setRadians(value: number, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
+    get shouldRender(): boolean;
+    get renderValue(): number;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -604,6 +622,8 @@ declare class ScaleProp extends ViewProp<Vec2> implements ViewScale {
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
     private _runLayoutTransition;
+    get shouldRender(): boolean;
+    get renderValue(): Vec2;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -625,6 +645,8 @@ declare class SizeProp extends ViewProp<Vec2> implements ViewSize {
     setHeight(value: number, runAnimation?: boolean): void;
     reset(runAnimation?: boolean): void;
     update(ts: number, dt: number): void;
+    get shouldRender(): boolean;
+    get renderValue(): Vec2;
     projectStyles(): string;
     isTransform(): boolean;
 }
@@ -742,6 +764,9 @@ export declare interface View {
 declare interface ViewBorderRadius extends AnimatableProp {
     value: BorderRadiusValue;
     set(value: string | Partial<BorderRadiusValueInput>, runAnimation?: boolean): void;
+    reset(runAnimation?: boolean): void;
+    disableUpdateWithScale(): void;
+    enableUpdateWithScale(): void;
 }
 
 declare type ViewDataProp = Record<string, string>;
@@ -771,7 +796,7 @@ declare interface ViewPosition extends AnimatableProp {
     progressTo(target: Partial<Point_2>): number;
 }
 
-declare abstract class ViewProp<TValue> implements IViewProp {
+declare abstract class ViewProp<TValue, TRenderValue = TValue> implements IViewProp {
     protected _animatorProp: AnimatorProp;
     protected _animator: Animator<TValue>;
     protected _initialValue: TValue;
@@ -781,7 +806,9 @@ declare abstract class ViewProp<TValue> implements IViewProp {
     protected _hasChanged: boolean;
     protected _view: CoreView;
     protected _animatorFactory: AnimatorFactory<TValue>;
+    protected _previousRenderValue?: TRenderValue;
     constructor(animatorFactory: AnimatorFactory<TValue>, initialValue: TValue, parentView: CoreView);
+    get shouldRender(): boolean;
     get isAnimating(): boolean;
     getAnimator(): Animator<TValue>;
     get animator(): AnimatorProp;
@@ -790,6 +817,7 @@ declare abstract class ViewProp<TValue> implements IViewProp {
     setAnimator<TAnimatorName extends keyof AnimatorConfigMap>(animatorName: TAnimatorName, config?: Partial<AnimatorConfigMap[TAnimatorName]>): void;
     protected _setTarget(value: TValue, runAnimation?: boolean): void;
     hasChanged(): boolean;
+    destroy(): void;
     update(ts: number, dt: number): void;
     abstract projectStyles(): string;
     abstract isTransform(): boolean;
