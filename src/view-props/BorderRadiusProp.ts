@@ -29,6 +29,8 @@ export interface ViewBorderRadius extends AnimatableProp {
     runAnimation?: boolean
   ): void
   reset(runAnimation?: boolean): void
+  disableUpdateWithScale(): void
+  enableUpdateWithScale(): void
 }
 
 export class BorderRadiusProp
@@ -37,6 +39,7 @@ export class BorderRadiusProp
 {
   private _invertedBorderRadius?: VHBorderRadiusValue
   private _forceStyleUpdateThisFrame: boolean = false
+  private _updateWithScale: boolean = true
 
   setFromElementPropValue(value: ElementPropValue<BorderRadiusValue>): void {
     this._setTarget(
@@ -48,6 +51,14 @@ export class BorderRadiusProp
       ],
       true
     )
+  }
+
+  enableUpdateWithScale(): void {
+    this._updateWithScale = true
+  }
+
+  disableUpdateWithScale(): void {
+    this._updateWithScale = false
   }
 
   get value(): BorderRadiusValue {
@@ -104,7 +115,7 @@ export class BorderRadiusProp
     if (this._forceStyleUpdateThisFrame) {
       this._hasChanged = true
       this._forceStyleUpdateThisFrame = false
-    } else if (this._view.scale.isAnimating) {
+    } else if (this._view.scale.isAnimating && this._updateWithScale) {
       this._hasChanged = true
     } else if (CSSNumbersAlmostEqual(this._targetValue, this._currentValue)) {
       this._hasChanged = !CSSNumbersAlmostEqual(
@@ -123,11 +134,15 @@ export class BorderRadiusProp
       dt
     })
 
-    this._applyScaleInverse()
+    if (this._updateWithScale) {
+      this._applyScaleInverse()
+    }
   }
 
   applyScaleInverse() {
-    this._forceStyleUpdateThisFrame = true
+    if (this._updateWithScale) {
+      this._forceStyleUpdateThisFrame = true
+    }
   }
 
   private _applyScaleInverse() {

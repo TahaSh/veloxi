@@ -341,6 +341,9 @@ export class Plugin<
   isInitialized(): boolean {
     return this._initialized
   }
+  get initialized() {
+    return this._initialized
+  }
   // @ts-ignore
   update(ts: number, dt: number) {}
 
