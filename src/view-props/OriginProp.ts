@@ -1,4 +1,5 @@
 import { Vec2 } from '../math'
+import { almostEqual } from '../utils/Math'
 import { ViewProp } from './ViewProp'
 import { Point } from './types'
 
@@ -43,8 +44,32 @@ export class OriginProp extends ViewProp<Vec2> implements ViewOrigin {
     this._setTarget(this._initialValue, false)
   }
 
+  get shouldRender(): boolean {
+    if (!this._hasChanged) {
+      return false
+    }
+    if (!this._previousRenderValue) {
+      return true
+    }
+    const renderValue = this.renderValue
+    if (
+      almostEqual(renderValue.x, this._previousRenderValue.x) &&
+      almostEqual(renderValue.y, this._previousRenderValue.y)
+    ) {
+      return false
+    }
+    return true
+  }
+
+  get renderValue() {
+    return new Vec2(this.x * 100, this.y * 100)
+  }
+
   projectStyles(): string {
-    return `transform-origin: ${this.x * 100}% ${this.y * 100}%;`
+    const renderValue = this.renderValue
+    const styles = `transform-origin: ${renderValue.x}% ${renderValue.y}%;`
+    this._previousRenderValue = renderValue
+    return styles
   }
 
   isTransform(): boolean {

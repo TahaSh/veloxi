@@ -1,4 +1,5 @@
 import {
+  BorderRadiusAlmostEquals,
   BorderRadiusValue,
   VHBorderRadiusValue,
   calculateBorderRadiusInverse,
@@ -10,6 +11,7 @@ import {
   CSSNumbersAlmostEqual,
   createCSSNumber
 } from '../utils/CSSNumber'
+import { almostEqual } from '../utils/Math'
 import { AnimatableProp, ViewProp } from './ViewProp'
 
 interface BorderRadiusValueInput {
@@ -26,10 +28,11 @@ export interface ViewBorderRadius extends AnimatableProp {
     value: string | Partial<BorderRadiusValueInput>,
     runAnimation?: boolean
   ): void
+  reset(runAnimation?: boolean): void
 }
 
 export class BorderRadiusProp
-  extends ViewProp<CSSNumber[]>
+  extends ViewProp<CSSNumber[], VHBorderRadiusValue>
   implements ViewBorderRadius
 {
   private _invertedBorderRadius?: VHBorderRadiusValue
@@ -128,6 +131,12 @@ export class BorderRadiusProp
   }
 
   private _applyScaleInverse() {
+    if (
+      almostEqual(this._view.scale.x, 1) &&
+      almostEqual(this._view.scale.y, 1)
+    ) {
+      return
+    }
     const newWidth = this._rect.size.width * this._view.scale.x
     const newHeight = this._rect.size.height * this._view.scale.y
 
@@ -142,11 +151,68 @@ export class BorderRadiusProp
     )
   }
 
-  projectStyles(): string {
-    if (this.invertedBorderRadius) {
-      return `border-radius: ${this.invertedBorderRadius.h.topLeft.valueWithUnit} ${this.invertedBorderRadius.h.topRight.valueWithUnit} ${this.invertedBorderRadius.h.bottomRight.valueWithUnit} ${this.invertedBorderRadius.h.bottomLeft.valueWithUnit} / ${this.invertedBorderRadius.v.topLeft.valueWithUnit} ${this.invertedBorderRadius.v.topRight.valueWithUnit} ${this.invertedBorderRadius.v.bottomRight.valueWithUnit} ${this.invertedBorderRadius.v.bottomLeft.valueWithUnit};`
+  get shouldRender(): boolean {
+    if (!this._hasChanged) {
+      return false
     }
-    return `border-radius: ${this.value.topLeft.valueWithUnit} ${this.value.topRight.valueWithUnit} ${this.value.bottomRight.valueWithUnit} ${this.value.bottomLeft.valueWithUnit};`
+    if (!this._previousRenderValue) {
+      return true
+    }
+    if (
+      BorderRadiusAlmostEquals(
+        this.renderValue.v,
+        this._previousRenderValue.v
+      ) &&
+      BorderRadiusAlmostEquals(this.renderValue.h, this._previousRenderValue.h)
+    ) {
+      return false
+    }
+    return true
+  }
+
+  get renderValue(): VHBorderRadiusValue {
+    // if (this.invertedBorderRadius) {
+    //   return `border-radius: ${this.invertedBorderRadius.h.topLeft.valueWithUnit} ${this.invertedBorderRadius.h.topRight.valueWithUnit} ${this.invertedBorderRadius.h.bottomRight.valueWithUnit} ${this.invertedBorderRadius.h.bottomLeft.valueWithUnit} / ${this.invertedBorderRadius.v.topLeft.valueWithUnit} ${this.invertedBorderRadius.v.topRight.valueWithUnit} ${this.invertedBorderRadius.v.bottomRight.valueWithUnit} ${this.invertedBorderRadius.v.bottomLeft.valueWithUnit};`
+    // }
+    // return `border-radius: ${this.value.topLeft.valueWithUnit} ${this.value.topRight.valueWithUnit} ${this.value.bottomRight.valueWithUnit} ${this.value.bottomLeft.valueWithUnit};`
+    if (this.invertedBorderRadius) {
+      return {
+        v: {
+          topLeft: this.invertedBorderRadius.v.topLeft,
+          topRight: this.invertedBorderRadius.v.topRight,
+          bottomLeft: this.invertedBorderRadius.v.bottomLeft,
+          bottomRight: this.invertedBorderRadius.v.bottomRight
+        },
+        h: {
+          topLeft: this.invertedBorderRadius.h.topLeft,
+          topRight: this.invertedBorderRadius.h.topRight,
+          bottomLeft: this.invertedBorderRadius.h.bottomLeft,
+          bottomRight: this.invertedBorderRadius.h.bottomRight
+        }
+      }
+    }
+
+    return {
+      v: {
+        topLeft: this.value.topLeft,
+        topRight: this.value.topRight,
+        bottomLeft: this.value.bottomLeft,
+        bottomRight: this.value.bottomRight
+      },
+      h: {
+        topLeft: this.value.topLeft,
+        topRight: this.value.topRight,
+        bottomLeft: this.value.bottomLeft,
+        bottomRight: this.value.bottomRight
+      }
+    }
+  }
+
+  projectStyles(): string {
+    const renderValue = this.renderValue
+    const styles = `border-radius: ${renderValue.h.topLeft.valueWithUnit} ${renderValue.h.topRight.valueWithUnit} ${renderValue.h.bottomRight.valueWithUnit} ${renderValue.h.bottomLeft.valueWithUnit} / ${renderValue.v.topLeft.valueWithUnit} ${renderValue.v.topRight.valueWithUnit} ${renderValue.v.bottomRight.valueWithUnit} ${renderValue.v.bottomLeft.valueWithUnit};`
+    this._previousRenderValue = renderValue
+    return styles
   }
 
   isTransform(): boolean {

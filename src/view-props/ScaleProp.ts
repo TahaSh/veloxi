@@ -1,5 +1,6 @@
 import { CoreView } from '../core/View'
 import { Vec2 } from '../math'
+import { almostEqual } from '../utils/Math'
 import { ViewRect } from '../utils/RectReader'
 import { AnimatableProp, ViewProp } from './ViewProp'
 import { Point, Size } from './types'
@@ -135,12 +136,36 @@ export class ScaleProp extends ViewProp<Vec2> implements ViewScale {
     }
   }
 
-  projectStyles(): string {
+  get shouldRender(): boolean {
+    if (!this._hasChanged) {
+      return false
+    }
+    if (!this._previousRenderValue) {
+      return true
+    }
+    const renderValue = this.renderValue
+    if (
+      almostEqual(renderValue.x, this._previousRenderValue.x) &&
+      almostEqual(renderValue.y, this._previousRenderValue.y)
+    ) {
+      return false
+    }
+    return true
+  }
+
+  get renderValue() {
     const parentScaleX = this._view._parent ? this._view._parent.scale.x : 1
     const parentScaleY = this._view._parent ? this._view._parent.scale.y : 1
     const x = this._currentValue.x / parentScaleX
     const y = this._currentValue.y / parentScaleY
-    return `scale3d(${x}, ${y}, 1)`
+    return new Vec2(x, y)
+  }
+
+  projectStyles(): string {
+    const renderValue = this.renderValue
+    const styles = `scale3d(${renderValue.x}, ${renderValue.y}, 1)`
+    this._previousRenderValue = renderValue
+    return styles
   }
 
   isTransform(): boolean {

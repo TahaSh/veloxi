@@ -143,3 +143,15 @@ export function calculateBorderRadiusInverse(
     return { h: createCSSNumber(`${h}%`), v: createCSSNumber(`${v}%`) }
   }
 }
+
+export function BorderRadiusAlmostEquals(
+  a: BorderRadiusValue,
+  b: BorderRadiusValue
+): boolean {
+  return (
+    almostEqual(a.topLeft.value, b.topLeft.value) &&
+    almostEqual(a.topRight.value, b.topRight.value) &&
+    almostEqual(a.bottomRight.value, b.bottomRight.value) &&
+    almostEqual(a.bottomLeft.value, b.bottomLeft.value)
+  )
+}

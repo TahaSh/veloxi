@@ -16,6 +16,7 @@ export interface IViewProp {
   isTransform(): boolean
   hasChanged(): boolean
   isAnimating: boolean
+  shouldRender: boolean
 }
 
 export interface AnimatableProp {
@@ -26,7 +27,9 @@ export interface AnimatableProp {
   animator: AnimatorProp
 }
 
-export abstract class ViewProp<TValue> implements IViewProp {
+export abstract class ViewProp<TValue, TRenderValue = TValue>
+  implements IViewProp
+{
   protected _animatorProp: AnimatorProp
   protected _animator: Animator<TValue>
   protected _initialValue: TValue
@@ -36,6 +39,7 @@ export abstract class ViewProp<TValue> implements IViewProp {
   protected _hasChanged: boolean
   protected _view: CoreView
   protected _animatorFactory: AnimatorFactory<TValue>
+  protected _previousRenderValue?: TRenderValue
 
   constructor(
     animatorFactory: AnimatorFactory<TValue>,
@@ -49,8 +53,13 @@ export abstract class ViewProp<TValue> implements IViewProp {
     this._targetValue = cloneValue(initialValue)
     this._currentValue = cloneValue(initialValue)
     this._hasChanged = false
+    this._previousRenderValue = undefined
     this._view = parentView
     this._animator = this._animatorFactory.createInstantAnimator()
+  }
+
+  get shouldRender() {
+    return true
   }
 
   get isAnimating(): boolean {

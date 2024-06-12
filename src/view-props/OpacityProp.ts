@@ -42,8 +42,29 @@ export class OpacityProp extends ViewProp<number> implements ViewOpacity {
     })
   }
 
+  get shouldRender(): boolean {
+    if (!this._hasChanged) {
+      return false
+    }
+    if (typeof this._previousRenderValue === 'undefined') {
+      return true
+    }
+    const renderValue = this.renderValue
+    if (renderValue === this._previousRenderValue) {
+      return false
+    }
+    return true
+  }
+
+  get renderValue() {
+    return this.value
+  }
+
   projectStyles(): string {
-    return `opacity: ${this.value};`
+    const renderValue = this.renderValue
+    const styles = `opacity: ${renderValue};`
+    this._previousRenderValue = renderValue
+    return styles
   }
 
   isTransform(): boolean {

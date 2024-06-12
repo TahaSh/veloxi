@@ -1,4 +1,5 @@
 import { Vec2 } from '../math'
+import { almostEqual } from '../utils/Math'
 import { AnimatableProp, ViewProp } from './ViewProp'
 
 // Public prop interface
@@ -281,7 +282,24 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
     }
   }
 
-  projectStyles(): string {
+  get shouldRender(): boolean {
+    if (!this._hasChanged) {
+      return false
+    }
+    if (!this._previousRenderValue) {
+      return true
+    }
+    const renderValue = this.renderValue
+    if (
+      almostEqual(renderValue.x, this._previousRenderValue.x) &&
+      almostEqual(renderValue.y, this._previousRenderValue.y)
+    ) {
+      return false
+    }
+    return true
+  }
+
+  get renderValue() {
     let xOffset = 0
     let yOffset = 0
 
@@ -303,9 +321,17 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
         this._view.origin.y
     }
 
-    return `translate3d(${this._currentValue.x + xOffset}px, ${
+    return new Vec2(
+      this._currentValue.x + xOffset,
       this._currentValue.y + yOffset
-    }px, 0)`
+    )
+  }
+
+  projectStyles(): string {
+    const renderValue = this.renderValue
+    const styles = `translate3d(${renderValue.x}px, ${renderValue.y}px, 0)`
+    this._previousRenderValue = renderValue
+    return styles
   }
 
   isTransform(): boolean {

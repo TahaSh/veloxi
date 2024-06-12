@@ -1,3 +1,4 @@
+import { almostEqual } from '../utils/Math'
 import { AnimatableProp, ViewProp } from './ViewProp'
 
 // Public prop interface
@@ -55,8 +56,29 @@ export class RotationProp extends ViewProp<number> implements ViewRotation {
     })
   }
 
+  get shouldRender(): boolean {
+    if (!this._hasChanged) {
+      return false
+    }
+    if (typeof this._previousRenderValue === 'undefined') {
+      return true
+    }
+    const renderValue = this.renderValue
+    if (almostEqual(renderValue, this._previousRenderValue)) {
+      return false
+    }
+    return true
+  }
+
+  get renderValue() {
+    return this._currentValue
+  }
+
   projectStyles(): string {
-    return `rotate(${this._currentValue}${this._unit})`
+    const renderValue = this.renderValue
+    const styles = `rotate(${renderValue}${this._unit})`
+    this._previousRenderValue = renderValue
+    return styles
   }
 
   isTransform(): boolean {

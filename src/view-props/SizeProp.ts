@@ -1,4 +1,5 @@
 import { Vec2 } from '../math'
+import { almostEqual } from '../utils/Math'
 import { AnimatableProp, ViewProp } from './ViewProp'
 import { Size } from './types'
 
@@ -94,8 +95,32 @@ export class SizeProp extends ViewProp<Vec2> implements ViewSize {
     })
   }
 
+  get shouldRender(): boolean {
+    if (!this._hasChanged) {
+      return false
+    }
+    if (!this._previousRenderValue) {
+      return true
+    }
+    const renderValue = this.renderValue
+    if (
+      almostEqual(renderValue.x, this._previousRenderValue.x) &&
+      almostEqual(renderValue.y, this._previousRenderValue.y)
+    ) {
+      return false
+    }
+    return true
+  }
+
+  get renderValue() {
+    return new Vec2(this.width, this.height)
+  }
+
   projectStyles(): string {
-    return `width: ${this.width}px; height: ${this.height}px;`
+    const renderValue = this.renderValue
+    const styles = `width: ${renderValue.x}px; height: ${renderValue.y}px;`
+    this._previousRenderValue = renderValue
+    return styles
   }
 
   isTransform(): boolean {

@@ -8,6 +8,7 @@ const SharedLayoutPlugin: PluginFactory = (context) => {
     if (view.name === 'underline') {
       underline = view
       underline.position.setAnimator('spring')
+      underline.layoutTransition(true)
     }
   })
 }

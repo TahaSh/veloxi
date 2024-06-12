@@ -1,5 +1,6 @@
 import { Vec2 } from '../math'
 import { ElementReader, readElement } from '../utils/ElementReader'
+import { createProxy } from '../utils/ObjectProxy'
 import { ViewRect } from '../utils/RectReader'
 import { toKebabCase } from '../utils/String'
 import { getUniqueId } from '../utils/uniqueId'
@@ -79,6 +80,7 @@ export class CoreView {
 
   private _temporaryView: boolean
   private _inverseEffect: boolean
+  private _renderNextTick: boolean
 
   constructor(element: HTMLElement, name: string, registry: Registry) {
     this.id = getUniqueId()
@@ -94,6 +96,10 @@ export class CoreView {
     this.element.dataset.velViewId = this.id
     this._temporaryView = false
     this._inverseEffect = false
+    this.styles = createProxy(this.styles, () => {
+      this._renderNextTick = true
+    })
+    this._renderNextTick = false
   }
 
   destroy() {
@@ -355,7 +361,17 @@ export class CoreView {
     return this._temporaryView
   }
 
+  get shouldRender() {
+    return (
+      this._renderNextTick ||
+      this._viewProps.allProps().some((prop) => prop.shouldRender)
+    )
+  }
+
   render() {
+    if (!this.shouldRender) {
+      return
+    }
     // If we are rendering a removed view, which is a temporary view
     // we are showing for animation, then skip the first render frame.
     // We need to do this to prevent some glitching because the temp view
@@ -393,6 +409,8 @@ export class CoreView {
     styles += this._getUserStyles()
 
     this.element.style.cssText = styles
+
+    this._renderNextTick = false
   }
 
   private _getUserStyles(): string {
