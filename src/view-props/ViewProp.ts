@@ -15,6 +15,7 @@ export interface IViewProp {
   projectStyles(): string
   isTransform(): boolean
   hasChanged(): boolean
+  destroy(): void
   isAnimating: boolean
   shouldRender: boolean
 }
@@ -106,6 +107,10 @@ export abstract class ViewProp<TValue, TRenderValue = TValue>
 
   hasChanged() {
     return this._hasChanged
+  }
+
+  destroy() {
+    this._hasChanged = false
   }
 
   // @ts-ignore

@@ -103,8 +103,10 @@ export class CoreView {
   }
 
   destroy() {
+    this._viewProps.allProps().forEach((prop) => prop.destroy())
     this.element.removeAttribute('data-vel-view-id')
     this.element.removeAttribute('data-vel-plugin-id')
+    this._renderNextTick = true
   }
 
   get elementReader() {

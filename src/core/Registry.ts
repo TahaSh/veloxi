@@ -210,8 +210,7 @@ export class Registry {
 
   public destroy(pluginName?: string, callback?: () => void) {
     if (!pluginName) {
-      // Destroy all
-      this._destroyAll()
+      this._destroyAll(callback)
       return
     }
     let plugins: IPlugin[] = [] as IPlugin[]
@@ -254,15 +253,19 @@ export class Registry {
     this._plugins = this._plugins.filter((p) => p.id !== plugin.id)
   }
 
-  private _destroyAll() {
-    this._plugins = []
-    this._views = []
-    this._viewsPerPlugin.clear()
-    this._viewsToBeCreated = []
-    this._viewsToBeRemoved = []
-    this._viewsCreatedInPreviousFrame = []
-    this._layoutIdToViewMap.clear()
-    this._eventPluginsPerPlugin.clear()
+  private _destroyAll(callback?: () => void) {
+    this._views.forEach((view) => view.destroy())
+    requestAnimationFrame(() => {
+      this._plugins = []
+      this._views = []
+      this._viewsPerPlugin.clear()
+      this._viewsToBeCreated = []
+      this._viewsToBeRemoved = []
+      this._viewsCreatedInPreviousFrame = []
+      this._layoutIdToViewMap.clear()
+      this._eventPluginsPerPlugin.clear()
+      callback?.()
+    })
   }
 
   public reset(pluginName?: string, callback?: () => void) {
