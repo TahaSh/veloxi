@@ -1,7 +1,7 @@
 var Ce = Object.defineProperty;
-var Ne = (o, e, t) => e in o ? Ce(o, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : o[e] = t;
-var a = (o, e, t) => (Ne(o, typeof e != "symbol" ? e + "" : e, t), t);
-class I {
+var Ie = (o, e, t) => e in o ? Ce(o, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : o[e] = t;
+var a = (o, e, t) => (Ie(o, typeof e != "symbol" ? e + "" : e, t), t);
+class N {
   constructor(e) {
     a(this, "x");
     a(this, "y");
@@ -9,13 +9,13 @@ class I {
     this.x = e.x, this.y = e.y, this.target = e.target;
   }
 }
-class U extends I {
+class U extends N {
 }
-class L extends I {
+class L extends N {
 }
-class B extends I {
+class B extends N {
 }
-class S extends I {
+class S extends N {
 }
 class fe {
   constructor(e) {
@@ -27,7 +27,7 @@ class fe {
     this.event = e, this.pluginId = e.pluginId, this.pluginName = e.pluginName, this.viewName = e.viewName, this.dataName = e.dataName, this.dataValue = e.dataValue;
   }
 }
-function Ie(o) {
+function Ne(o) {
   return o.replace(/(?:^\w|[A-Z]|\b\w)/g, function(e, t) {
     return t === 0 ? e.toLowerCase() : e.toUpperCase();
   }).replace(/\s+/g, "").replace(/-+/g, "");
@@ -83,7 +83,7 @@ class Be {
       if (i && /data-vel-data-.+/gi.test(i)) {
         const n = t.target, r = n.dataset.velPluginId || "", u = n.dataset.velPlugin || "", h = n.dataset.velView || "", c = n.getAttribute(i);
         if (c && c !== t.oldValue) {
-          const d = Ie(
+          const d = Ne(
             i.replace("data-vel-data-", "")
           );
           this._eventBus.emitEvent(fe, {
@@ -113,7 +113,7 @@ class le extends Se {
     this._handler(t);
   }
 }
-class k {
+class M {
   constructor() {
     a(this, "_listeners", /* @__PURE__ */ new Map());
     a(this, "_keyedListeners", /* @__PURE__ */ new Map());
@@ -207,7 +207,7 @@ class me {
     a(this, "_layoutIdViewMapWaitingToEnter");
     a(this, "_apiData");
     a(this, "_isReady", !1);
-    this._id = ve(), this._pluginFactory = e, this._pluginName = t, this._registry = i, this._eventBus = s, this._appEventBus = n, this._internalEventBus = new k(), this._config = r, this._layoutIdViewMapWaitingToEnter = /* @__PURE__ */ new Map(), this._pluginKey = u, this._apiData = {}, this._appEventBus.subscribeToPluginReadyEvent(
+    this._id = ve(), this._pluginFactory = e, this._pluginName = t, this._registry = i, this._eventBus = s, this._appEventBus = n, this._internalEventBus = new M(), this._config = r, this._layoutIdViewMapWaitingToEnter = /* @__PURE__ */ new Map(), this._pluginKey = u, this._apiData = {}, this._appEventBus.subscribeToPluginReadyEvent(
       () => {
         this._isReady = !0;
       },
@@ -484,10 +484,10 @@ class l {
     return new l(e.x + t.x, e.y + t.y);
   }
 }
-function ke(o, e, t) {
+function Me(o, e, t) {
   return Math.min(Math.max(o, e), t);
 }
-function Me(o, e, t) {
+function ke(o, e, t) {
   return o + (e - o) * t;
 }
 function g(o, e) {
@@ -546,7 +546,7 @@ class b {
     return { h: `${i}%`, v: `${s}%` };
   }
 }
-function M(o) {
+function k(o) {
   const e = o.split(" ").map((i) => f(i)), t = {
     value: 0,
     unit: "",
@@ -688,7 +688,7 @@ class Ge {
     return qe(this._computedStyle.opacity);
   }
   get borderRadius() {
-    return M(this._computedStyle.borderRadius);
+    return k(this._computedStyle.borderRadius);
   }
   get origin() {
     return Xe(
@@ -916,7 +916,7 @@ class Z {
     return this.createInstantAnimator();
   }
 }
-class N extends Z {
+class I extends Z {
   createInstantAnimator() {
     return new X();
   }
@@ -1089,7 +1089,7 @@ class lt extends y {
   set(t, i = !0) {
     let s;
     if (typeof t == "string") {
-      const c = M(t.trim());
+      const c = k(t.trim());
       s = {
         topLeft: c.value.topLeft.valueWithUnit,
         topRight: c.value.topRight.valueWithUnit,
@@ -1133,7 +1133,7 @@ class lt extends y {
       return;
     const t = this._rect.size.width * this._view.scale.x, i = this._rect.size.height * this._view.scale.y;
     this._invertedBorderRadius = Ue(
-      M(
+      k(
         `${this._currentValue[0].valueWithUnit} ${this._currentValue[1].valueWithUnit} ${this._currentValue[2].valueWithUnit} ${this._currentValue[3].valueWithUnit}`
       ).value,
       {
@@ -1621,17 +1621,17 @@ class ft {
     a(this, "_props", /* @__PURE__ */ new Map());
     this._props.set(
       "position",
-      new dt(new N(), new l(0, 0), e)
+      new dt(new I(), new l(0, 0), e)
     ), this._props.set(
       "scale",
-      new gt(new N(), new l(1, 1), e)
+      new gt(new I(), new l(1, 1), e)
     ), this._props.set(
       "rotation",
       new _t(new _e(), 0, e)
     ), this._props.set(
       "size",
       new pt(
-        new N(),
+        new I(),
         new l(e.rect.size.width, e.rect.size.height),
         e
       )
@@ -1657,7 +1657,7 @@ class ft {
     ), this._props.set(
       "origin",
       new ct(
-        new N(),
+        new I(),
         e.elementReader.origin.value,
         e
       )
@@ -2006,8 +2006,8 @@ class mt {
           return !0;
       }
     ).forEach((n) => {
-      const r = n, u = r.dataset.velView ? r.dataset.velView : `${e.name}-child`, h = this.createView(n, u);
-      t.addView(h), t.notifyAboutViewAdded(h);
+      const r = n, u = r.dataset.velView ? r.dataset.velView : `${e.name}-child`, h = this.createView(r, u), c = r.dataset.velLayoutId;
+      c && !this._layoutIdToViewMap.has(c) && this._layoutIdToViewMap.set(c, h), t.addView(h), t.notifyAboutViewAdded(h);
     });
   }
   _handleRemoveView(e) {
@@ -2230,7 +2230,7 @@ class J {
     a(this, "_registry");
     a(this, "_eventBus");
     a(this, "_appEventBus");
-    this._eventBus = new k(), this._appEventBus = new k(), this._registry = new mt(this._appEventBus, this._eventBus), new Be(this._eventBus);
+    this._eventBus = new M(), this._appEventBus = new M(), this._registry = new mt(this._appEventBus, this._eventBus), new Be(this._eventBus);
   }
   static create() {
     return new J();
@@ -2558,12 +2558,12 @@ function xt(o, e) {
   const t = o.map(e), i = Math.min(...t), s = t.indexOf(i);
   return o[s];
 }
-const Nt = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const It = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  clamp: ke,
+  clamp: Me,
   minBy: xt,
-  valueAtPercentage: Me
-}, Symbol.toStringTag, { value: "Module" })), It = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  valueAtPercentage: ke
+}, Symbol.toStringTag, { value: "Module" })), Nt = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   PointerClickEvent: U,
   PointerDownEvent: B,
@@ -2576,13 +2576,13 @@ export {
   fe as DataChangedEvent,
   wt as DragEvent,
   yt as DragEventPlugin,
-  k as EventBus,
+  M as EventBus,
   W as EventPlugin,
-  It as Events,
+  Nt as Events,
   $e as Plugin,
   De as PluginContext,
   Vt as SwipeEvent,
   Pt as SwipeEventPlugin,
-  Nt as Utils,
+  It as Utils,
   Ct as createApp
 };
