@@ -158,7 +158,13 @@ export class Registry {
       const viewName = childEl.dataset.velView
         ? childEl.dataset.velView
         : `${view.name}-child`
-      const childView = this.createView(child as HTMLElement, viewName)
+      const childView = this.createView(childEl, viewName)
+
+      const layoutId = childEl.dataset.velLayoutId
+      if (layoutId && !this._layoutIdToViewMap.has(layoutId)) {
+        this._layoutIdToViewMap.set(layoutId, childView)
+      }
+
       plugin.addView(childView)
       plugin.notifyAboutViewAdded(childView)
     })
