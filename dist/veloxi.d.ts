@@ -157,7 +157,7 @@ declare class CoreView {
     private _temporaryView;
     private _inverseEffect;
     private _renderNextTick;
-    constructor(element: HTMLElement, name: string, registry: Registry);
+    constructor(element: HTMLElement, name: string, registry: Registry, layoutId?: string);
     destroy(): void;
     get elementReader(): ElementReader;
     setElement(element: HTMLElement): void;
@@ -564,12 +564,17 @@ declare class Registry {
     private _viewsCreatedInPreviousFrame;
     private _layoutIdToViewMap;
     private _eventPluginsPerPlugin;
+    private _pluginNameToPluginFactoryMap;
+    private _pluginNameToPluginConfigMap;
     constructor(appEventBus: EventBus, eventBus: EventBus);
     update(): void;
     associateEventPluginWithPlugin(pluginId: PluginId, eventPluginId: PluginId): void;
     private _handleRemovedViews;
     private _getPluginNameForElement;
+    private _getPluginIdForElement;
+    private _isScopedElement;
     private _handleAddedViews;
+    private _getLayoutIdForElement;
     private _createNewView;
     private _createChildrenForView;
     private _handleRemoveView;
@@ -593,7 +598,7 @@ declare class Registry {
     hasPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>): boolean;
     createPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, eventBus: EventBus, config?: TConfig): IPlugin<TConfig, TPluginApi>;
     getViews(): ReadonlyArray<CoreView>;
-    createView(domEl: HTMLElement, name: string): CoreView;
+    createView(domEl: HTMLElement, name: string, layoutId?: string): CoreView;
     assignViewToPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(view: View, plugin: IPlugin<TConfig, TPluginApi>): void;
     getViewsForPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(plugin: IPlugin<TConfig, TPluginApi>): Array<CoreView>;
     getViewsByNameForPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(plugin: IPlugin<TConfig, TPluginApi>, viewName: string): Array<CoreView>;
