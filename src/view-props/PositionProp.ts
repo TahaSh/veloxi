@@ -197,7 +197,7 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
         let parentDy = 0
         let offsetY = 0
         let offsetX = 0
-        if (parent) {
+        if (parent && parent.position.animator.name !== 'instant') {
           const parentStartRect = parent.rect.pageOffset
           const currentScroll = parent.getScroll()
           const parentCurrentRect = {
@@ -234,12 +234,12 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
 
       let parentDx = 0
       let parentDy = 0
-      if (parent) {
+      if (parent && parent.position.animator.name !== 'instant') {
         parentDx =
           parent.previousRect.viewportOffset.left -
           parent.rect.viewportOffset.left
       }
-      if (parent) {
+      if (parent && parent.position.animator.name !== 'instant') {
         parentDy =
           parent.previousRect.viewportOffset.top -
           parent.rect.viewportOffset.top
@@ -249,16 +249,20 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
       let targetParentDw = 1
       let targetParentDh = 1
 
-      if (parent) {
+      if (parent && parent.scale.animator.name !== 'instant') {
         targetParentDw = parent.previousRect.size.width / parent.rect.size.width
         targetParentDh =
           parent.previousRect.size.height / parent.rect.size.height
       }
 
-      const prevParentLeft = parent
-        ? parent.previousRect.viewportOffset.left
-        : 0
-      const prevParentTop = parent ? parent.previousRect.viewportOffset.top : 0
+      const prevParentLeft =
+        parent && parent.position.animator.name !== 'instant'
+          ? parent.previousRect.viewportOffset.left
+          : 0
+      const prevParentTop =
+        parent && parent.position.animator.name !== 'instant'
+          ? parent.previousRect.viewportOffset.top
+          : 0
       const relativeLeft = prevRect.viewportOffset.left - prevParentLeft
       const relativeTop = prevRect.viewportOffset.top - prevParentTop
       const prevMarginOffsetX = relativeLeft / targetParentDw - relativeLeft

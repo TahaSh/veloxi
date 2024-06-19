@@ -82,7 +82,12 @@ export class CoreView {
   private _inverseEffect: boolean
   private _renderNextTick: boolean
 
-  constructor(element: HTMLElement, name: string, registry: Registry) {
+  constructor(
+    element: HTMLElement,
+    name: string,
+    registry: Registry,
+    layoutId?: string
+  ) {
     this.id = getUniqueId()
     this.name = name
     this.element = element
@@ -90,7 +95,7 @@ export class CoreView {
     this._previousRect = this._elementReader.rect
     this._viewProps = new ViewPropCollection(this)
     this._skipFirstRenderFrame = true
-    this._layoutId = element.dataset.velLayoutId
+    this._layoutId = layoutId
     this._layoutTransition = false
     this._registry = registry
     this.element.dataset.velViewId = this.id

@@ -24,6 +24,9 @@ export class Registry {
   private _viewsCreatedInPreviousFrame: Array<CoreView> = []
   private _layoutIdToViewMap: Map<LayoutId, CoreView> = new Map()
   private _eventPluginsPerPlugin: Map<PluginId, Array<PluginId>> = new Map()
+  private _pluginNameToPluginFactoryMap: Map<string, PluginFactory<any, any>> =
+    new Map()
+  private _pluginNameToPluginConfigMap: Map<string, any> = new Map()
 
   constructor(appEventBus: EventBus, eventBus: EventBus) {
     this._appEventBus = appEventBus
@@ -70,28 +73,85 @@ export class Registry {
     }
   }
 
+  private _getPluginIdForElement(domEl: HTMLElement): string | undefined {
+    const pluginName = this._getPluginNameForElement(domEl)
+    if (!pluginName) {
+      return
+    }
+    const pluginEl = domEl.closest('[data-vel-plugin-id]')
+    if (pluginEl) {
+      return (pluginEl as HTMLElement).dataset.velPluginId
+    }
+    const plugin = this.getPluginByName(pluginName)
+    if (plugin) {
+      return plugin.id
+    }
+  }
+
+  private _isScopedElement(domEl: HTMLElement): boolean {
+    const pluginName = this._getPluginNameForElement(domEl)
+    if (!pluginName) {
+      return false
+    }
+    const pluginFactory = this._pluginNameToPluginFactoryMap.get(pluginName)
+    const scope = pluginFactory?.scope
+    const isViewScoped = domEl.dataset.velView === scope
+    return isViewScoped
+  }
+
   private _handleAddedViews() {
     this._viewsCreatedInPreviousFrame.forEach((view) => {
       view.markAsAdded()
     })
     this._viewsCreatedInPreviousFrame = []
-    const elementsToBeAdded = this._viewsToBeCreated.filter((domEl) => {
-      const pluginName = this._getPluginNameForElement(domEl)
-      if (!pluginName) return false
-      return this.getPluginByName(pluginName)
+
+    // Create plugin for views in scoped plugins
+    const scopedViews = this._viewsToBeCreated.filter((domEl) =>
+      this._isScopedElement(domEl)
+    )
+    const restViews = this._viewsToBeCreated.filter(
+      (domEl) => !this._isScopedElement(domEl)
+    )
+    this._viewsToBeCreated = []
+    scopedViews.forEach((domEl) => {
+      const pluginName = this._getPluginNameForElement(domEl)!
+      const pluginFactory = this._pluginNameToPluginFactoryMap.get(pluginName)!
+      const pluginConfig = this._pluginNameToPluginConfigMap.get(pluginName)
+      // const scope = pluginFactory.scope
+      const key = domEl.dataset.velPluginKey
+      const plugin = createPlugin(
+        pluginFactory,
+        this,
+        this._eventBus,
+        this._appEventBus,
+        pluginConfig,
+        key
+      )
+      this._plugins.push(plugin)
+      const viewName = domEl.dataset.velView!
+      const view = this._createNewView(domEl, viewName, plugin)
+      if (view.isInverseEffectEnabled) {
+        view.setAnimatorsFromParent()
+      }
+      plugin.notifyAboutViewAdded(view)
+    })
+
+    const elementsToBeAdded = restViews.filter((domEl) => {
+      const pluginId = this._getPluginIdForElement(domEl)
+      return !!pluginId
     })
 
     if (elementsToBeAdded.length === 0) return
     elementsToBeAdded.forEach((domEl) => {
-      const pluginName = this._getPluginNameForElement(domEl)
+      const pluginId = this._getPluginIdForElement(domEl)
       const viewName = domEl.dataset.velView
-      const layoutId = domEl.dataset.velLayoutId
-      if (!viewName || !pluginName) return
-      const plugin = this.getPluginByName(pluginName)
+      if (!viewName || !pluginId) return
+      const plugin = this._getPluginById(pluginId)
       if (!plugin) {
         // TODO: Warning message
         return
       }
+      const layoutId = this._getLayoutIdForElement(domEl, plugin)
       let view: CoreView
       if (layoutId && this._layoutIdToViewMap.has(layoutId)) {
         view = this._layoutIdToViewMap.get(layoutId)!
@@ -107,7 +167,19 @@ export class Registry {
       }
       plugin.notifyAboutViewAdded(view)
     })
-    this._viewsToBeCreated = []
+  }
+
+  private _getLayoutIdForElement<
+    TConfig extends PluginConfig = PluginConfig,
+    TPluginApi extends PluginApi = PluginApi
+  >(
+    domEl: HTMLElement,
+    plugin: IPlugin<TConfig, TPluginApi>
+  ): string | undefined {
+    const layoutId = domEl.dataset.velLayoutId
+    if (layoutId) {
+      return `${layoutId}-${plugin.id}`
+    }
   }
 
   private _createNewView<
@@ -118,7 +190,8 @@ export class Registry {
     viewName: string,
     plugin: IPlugin<TConfig, TPluginApi>
   ) {
-    const view = this.createView(domEl, viewName)
+    const layoutId = this._getLayoutIdForElement(domEl, plugin)
+    const view = this.createView(domEl, viewName, layoutId)
     plugin.addView(view)
     if (view.layoutId) {
       this._layoutIdToViewMap.set(view.layoutId, view)
@@ -144,23 +217,38 @@ export class Registry {
   >(view: CoreView, plugin: IPlugin<TConfig, TPluginApi>) {
     const allNestedChildren = view.element.querySelectorAll('*')
     if (!allNestedChildren.length) return
-    const childrenToBeCreated = Array.from(allNestedChildren).filter(
-      (child) => {
-        const childElement = child as HTMLElement
-        // If it's already defined as a view, don't create a view for it here
-        const pluginName = childElement.dataset.velPlugin
-        const viewName = childElement.dataset.velView
-        if (!viewName || !pluginName) return true
-      }
-    )
-    childrenToBeCreated.forEach((child) => {
+    if (
+      Array.from(allNestedChildren).some(
+        (el) =>
+          this._getPluginNameForElement(el as HTMLElement) !== plugin.pluginName
+      )
+    ) {
+      console.log(
+        `%c WARNING: The plugin "${plugin.pluginName}" has view(s) created for a different plugin. Make sure all views inside that plugin don\'t have data-vel-plugin set or the pluginName is set to "${plugin.pluginName}"`,
+        'background: #885500'
+      )
+      return
+    }
+    // const childrenToBeCreated = Array.from(allNestedChildren).filter(
+    //   (child) => {
+    //     const childElement = child as HTMLElement
+    //     // If it's already defined as a view, don't create a view for it here
+    //     // const pluginName = childElement.dataset.velPlugin
+    //     const pluginName = this._getPluginNameForElement(childElement)
+    //     return pluginName === plugin.pluginName
+    //     // const viewName = childElement.dataset.velView
+    //     // if (!viewName || !pluginName) return true
+    //   }
+    // )
+    Array.from(allNestedChildren).forEach((child) => {
       const childEl = child as HTMLElement
       const viewName = childEl.dataset.velView
         ? childEl.dataset.velView
         : `${view.name}-child`
-      const childView = this.createView(childEl, viewName)
 
-      const layoutId = childEl.dataset.velLayoutId
+      const layoutId = this._getLayoutIdForElement(childEl, plugin)
+      const childView = this.createView(childEl, viewName, layoutId)
+
       if (layoutId && !this._layoutIdToViewMap.has(layoutId)) {
         this._layoutIdToViewMap.set(layoutId, childView)
       }
@@ -408,6 +496,18 @@ export class Registry {
       const domEls = document.querySelectorAll<HTMLElement>(
         `[data-vel-plugin=${pluginFactory.pluginName}][data-vel-view=${pluginFactory.scope}]`
       )
+
+      if (!this._pluginNameToPluginFactoryMap.has(pluginFactory.pluginName)) {
+        this._pluginNameToPluginFactoryMap.set(
+          pluginFactory.pluginName,
+          pluginFactory
+        )
+      }
+
+      if (!this._pluginNameToPluginConfigMap.has(pluginFactory.pluginName)) {
+        this._pluginNameToPluginConfigMap.set(pluginFactory.pluginName, config)
+      }
+
       if (domEls) {
         scopeRoots = Array.from(domEls)
       } else {
@@ -435,8 +535,19 @@ export class Registry {
         `[data-vel-plugin=${plugin.pluginName}]`
       )
       domEls = [...domEls, ...childEls]
-      if (domEls.length) {
-        domEls.forEach((domEl) => {
+      const topLevelDomEls = domEls.filter((domEl) => {
+        const parentElement = domEl.parentElement
+        if (!parentElement) {
+          return true
+        }
+        const pluginName = this._getPluginNameForElement(domEl.parentElement)
+        if (pluginName && pluginName.length > 0) {
+          return false
+        }
+        return true
+      })
+      if (topLevelDomEls.length) {
+        topLevelDomEls.forEach((domEl) => {
           const viewName = domEl.dataset.velView
           if (!viewName) return
           const view = this._createNewView(domEl, viewName, plugin)
@@ -456,10 +567,12 @@ export class Registry {
       this._appEventBus,
       config
     )
-    console.log(
-      `%c WARNING: The plugin "${plugin.pluginName}" is created but there are no elements using it on the page`,
-      'background: #885500'
-    )
+    if (!pluginFactory.scope) {
+      console.log(
+        `%c WARNING: The plugin "${plugin.pluginName}" is created but there are no elements using it on the page`,
+        'background: #885500'
+      )
+    }
     return plugin
   }
 
@@ -467,8 +580,8 @@ export class Registry {
     return this._views
   }
 
-  createView(domEl: HTMLElement, name: string): CoreView {
-    const view = new CoreView(domEl, name, this)
+  createView(domEl: HTMLElement, name: string, layoutId?: string): CoreView {
+    const view = new CoreView(domEl, name, this, layoutId)
     this._views.push(view)
     this._viewsCreatedInPreviousFrame.push(view)
     return view
