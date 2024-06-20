@@ -19,12 +19,37 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
   private _animateLayoutUpdateNextFrame = false
   private _parentScaleInverse: Vec2 = new Vec2(1, 1)
 
+  private get _parentDiff() {
+    let parent = this._view._parent
+    let parentDx = 0
+    let parentDy = 0
+    if (parent) {
+      const parentStartRect = parent.rect.pageOffset
+      const currentScroll = parent.getScroll()
+      const parentCurrentRect = {
+        left: parent.previousRect.viewportOffset.left + currentScroll.x,
+        top: parent.previousRect.viewportOffset.top + currentScroll.y
+      }
+      parentDx = parentCurrentRect.left - parentStartRect.left
+      parentDy = parentCurrentRect.top - parentStartRect.top
+    }
+    return { parentDx, parentDy }
+  }
+
   get x() {
-    return this._currentValue.x + this._rect.pageOffset.left
+    return (
+      this._currentValue.x +
+      this._rect.pageOffset.left +
+      this._parentDiff.parentDx
+    )
   }
 
   get y() {
-    return this._currentValue.y + this._rect.pageOffset.top
+    return (
+      this._currentValue.y +
+      this._rect.pageOffset.top +
+      this._parentDiff.parentDy
+    )
   }
 
   get initialX() {

@@ -280,7 +280,7 @@ export abstract class IPlugin<
     tempView.rotation.setDegrees(view.rotation.degrees, false)
     tempView.scale.set({ x: view.scale.x, y: view.scale.y }, false)
     tempView.size.set(
-      { width: view.size.width, height: view.size.height },
+      { width: view._localWidth, height: view._localHeight },
       false
     )
     view._copyAnimatorsToAnotherView(tempView)

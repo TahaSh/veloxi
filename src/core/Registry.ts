@@ -117,7 +117,6 @@ export class Registry {
       const pluginName = this._getPluginNameForElement(domEl)!
       const pluginFactory = this._pluginNameToPluginFactoryMap.get(pluginName)!
       const pluginConfig = this._pluginNameToPluginConfigMap.get(pluginName)
-      // const scope = pluginFactory.scope
       const key = domEl.dataset.velPluginKey
       const plugin = createPlugin(
         pluginFactory,
@@ -229,17 +228,6 @@ export class Registry {
       )
       return
     }
-    // const childrenToBeCreated = Array.from(allNestedChildren).filter(
-    //   (child) => {
-    //     const childElement = child as HTMLElement
-    //     // If it's already defined as a view, don't create a view for it here
-    //     // const pluginName = childElement.dataset.velPlugin
-    //     const pluginName = this._getPluginNameForElement(childElement)
-    //     return pluginName === plugin.pluginName
-    //     // const viewName = childElement.dataset.velView
-    //     // if (!viewName || !pluginName) return true
-    //   }
-    // )
     Array.from(allNestedChildren).forEach((child) => {
       const childEl = child as HTMLElement
       const viewName = childEl.dataset.velView

@@ -181,6 +181,14 @@ export class CoreView {
     return this._viewProps.size
   }
 
+  get _localWidth(): number {
+    return this._viewProps.size.localWidth
+  }
+
+  get _localHeight(): number {
+    return this._viewProps.size.localHeight
+  }
+
   get opacity(): ViewOpacity {
     return this._viewProps.opacity
   }
@@ -321,10 +329,10 @@ export class CoreView {
 
   // Using AABB collision detection
   overlapsWith(view: View): boolean {
-    const viewScaledWidth = view.size.width * view.scale.x
-    const viewScaledHeight = view.size.height * view.scale.y
-    const scaledWidth = this.size.width * this.scale.x
-    const scaledHeight = this.size.height * this.scale.y
+    const viewScaledWidth = (view as CoreView)._localWidth * view.scale.x
+    const viewScaledHeight = (view as CoreView)._localHeight * view.scale.y
+    const scaledWidth = this._localWidth * this.scale.x
+    const scaledHeight = this._localHeight * this.scale.y
 
     return (
       this.position.x < view.position.x + viewScaledWidth &&

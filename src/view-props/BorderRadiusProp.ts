@@ -39,7 +39,7 @@ export class BorderRadiusProp
 {
   private _invertedBorderRadius?: VHBorderRadiusValue
   private _forceStyleUpdateThisFrame: boolean = false
-  private _updateWithScale: boolean = true
+  private _updateWithScale: boolean = false
 
   setFromElementPropValue(value: ElementPropValue<BorderRadiusValue>): void {
     this._setTarget(
@@ -186,10 +186,6 @@ export class BorderRadiusProp
   }
 
   get renderValue(): VHBorderRadiusValue {
-    // if (this.invertedBorderRadius) {
-    //   return `border-radius: ${this.invertedBorderRadius.h.topLeft.valueWithUnit} ${this.invertedBorderRadius.h.topRight.valueWithUnit} ${this.invertedBorderRadius.h.bottomRight.valueWithUnit} ${this.invertedBorderRadius.h.bottomLeft.valueWithUnit} / ${this.invertedBorderRadius.v.topLeft.valueWithUnit} ${this.invertedBorderRadius.v.topRight.valueWithUnit} ${this.invertedBorderRadius.v.bottomRight.valueWithUnit} ${this.invertedBorderRadius.v.bottomLeft.valueWithUnit};`
-    // }
-    // return `border-radius: ${this.value.topLeft.valueWithUnit} ${this.value.topRight.valueWithUnit} ${this.value.bottomRight.valueWithUnit} ${this.value.bottomLeft.valueWithUnit};`
     if (this.invertedBorderRadius) {
       return {
         v: {

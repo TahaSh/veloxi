@@ -22,6 +22,7 @@ const ExpandTransitionPlugin: PluginFactory = (context) => {
 
   context.onViewAdded((view) => {
     view.layoutTransition(true)
+    view.borderRadius.enableUpdateWithScale()
     if (view.name === 'card') {
       configureCard(view)
     }

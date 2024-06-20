@@ -19,21 +19,28 @@ export interface ViewSize extends AnimatableProp {
 
 export class SizeProp extends ViewProp<Vec2> implements ViewSize {
   get width() {
+    return this._view.rect.size.width
+  }
+  get height() {
+    return this._view.rect.size.height
+  }
+
+  get localWidth() {
     return this._currentValue.x
   }
 
-  get height() {
+  get localHeight() {
     return this._currentValue.y
   }
 
   get widthAfterScale() {
     const scaleX = this._view.scale.x
-    return this._currentValue.x * scaleX
+    return this.localWidth * scaleX
   }
 
   get heightAfterScale() {
     const scaleY = this._view.scale.y
-    return this._currentValue.y * scaleY
+    return this.localHeight * scaleY
   }
 
   get initialWidth() {
@@ -113,7 +120,7 @@ export class SizeProp extends ViewProp<Vec2> implements ViewSize {
   }
 
   get renderValue() {
-    return new Vec2(this.width, this.height)
+    return new Vec2(this._currentValue.x, this._currentValue.y)
   }
 
   projectStyles(): string {
