@@ -310,6 +310,7 @@ declare interface ElementPropValue<T> {
 }
 
 declare class ElementReader {
+    private _element;
     private _rect;
     private _computedStyle;
     constructor(element: HTMLElement);
@@ -318,6 +319,10 @@ declare class ElementReader {
     get opacity(): ElementPropValue<number>;
     get borderRadius(): ElementPropValue<BorderRadiusValue>;
     get origin(): ElementPropValue<Vec2>;
+    get scroll(): {
+        y: number;
+        x: number;
+    };
 }
 
 export declare class EventBus {
