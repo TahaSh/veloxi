@@ -169,6 +169,8 @@ declare class CoreView {
     get _parents(): CoreView[];
     get rotation(): ViewRotation;
     get size(): ViewSize;
+    get _localWidth(): number;
+    get _localHeight(): number;
     get opacity(): ViewOpacity;
     get borderRadius(): ViewBorderRadius;
     get origin(): ViewOrigin;
@@ -528,9 +530,12 @@ declare class PointerMoveEvent extends PointerEvent_2 {
 declare class PointerUpEvent extends PointerEvent_2 {
 }
 
+declare function pointToViewProgress(point: Partial<Point>, view: View, maxDistance: number): number;
+
 declare class PositionProp extends ViewProp<Vec2> implements ViewPosition {
     private _animateLayoutUpdateNextFrame;
     private _parentScaleInverse;
+    private get _parentDiff();
     get x(): number;
     get y(): number;
     get initialX(): number;
@@ -604,6 +609,8 @@ declare class Registry {
     getViewsByNameForPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(plugin: IPlugin<TConfig, TPluginApi>, viewName: string): Array<CoreView>;
 }
 
+declare function remap(value: number, a: number, b: number, c: number, d: number): number;
+
 declare class RotationProp extends ViewProp<number> implements ViewRotation {
     private _unit;
     get degrees(): number;
@@ -641,6 +648,8 @@ export declare type Size = {
 declare class SizeProp extends ViewProp<Vec2> implements ViewSize {
     get width(): number;
     get height(): number;
+    get localWidth(): number;
+    get localHeight(): number;
     get widthAfterScale(): number;
     get heightAfterScale(): number;
     get initialWidth(): number;
@@ -712,7 +721,9 @@ declare namespace Utils {
     export {
         minBy,
         clamp,
-        valueAtPercentage
+        valueAtPercentage,
+        remap,
+        pointToViewProgress
     }
 }
 export { Utils }
