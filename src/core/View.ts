@@ -296,34 +296,19 @@ export class CoreView {
   }
 
   getScroll(): Point {
-    let current = this.element
-    let y = 0
-    let x = 0
-
-    while (current) {
-      y += current.scrollTop
-      x += current.scrollLeft
-
-      current = current.offsetParent as HTMLElement
-    }
-
-    x += window.scrollX
-    y += window.scrollY
-
-    return { y, x }
+    return this._elementReader.scroll
   }
 
   intersects(x: number, y: number): boolean {
-    const currentScroll = this.getScroll()
     const position = {
-      x: this.position.x - currentScroll.x,
-      y: this.position.y - currentScroll.y
+      x: this.rect.viewportOffset.left,
+      y: this.rect.viewportOffset.top
     }
     return (
       x >= position.x &&
-      x <= position.x + this.size.widthAfterScale &&
+      x <= position.x + this.size.width &&
       y >= position.y &&
-      y <= position.y + this.size.heightAfterScale
+      y <= position.y + this.size.height
     )
   }
 

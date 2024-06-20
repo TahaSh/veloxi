@@ -12,12 +12,14 @@ import { Vec2 } from '../math'
 import { ViewRect, readRect } from './RectReader'
 
 export class ElementReader {
+  private _element: HTMLElement
   private _rect: ViewRect
   private _computedStyle: CSSStyleDeclaration
 
   constructor(element: HTMLElement) {
     this._rect = readRect(element)
     this._computedStyle = getComputedStyle(element)
+    this._element = element
   }
 
   read<K extends keyof ViewPropNameToElementPropValue>(
@@ -49,6 +51,24 @@ export class ElementReader {
       this._computedStyle.transformOrigin,
       this._rect.size
     )
+  }
+
+  get scroll() {
+    let current = this._element
+    let y = 0
+    let x = 0
+
+    while (current) {
+      y += current.scrollTop
+      x += current.scrollLeft
+
+      current = current.offsetParent as HTMLElement
+    }
+
+    x += window.scrollX
+    y += window.scrollY
+
+    return { y, x }
   }
 }
 
