@@ -6,11 +6,17 @@ abstract class IEventHandler<TEvent = Record<string, unknown>> {
     this.call(props)
   }
 
+  abstract getHandler(): (props: TEvent) => void
+
   protected abstract call(props: TEvent): void
 }
 
 class EventHandler<TEvent> extends IEventHandler<TEvent> {
   private _handler: (props: TEvent) => void
+
+  getHandler(): (props: TEvent) => void {
+    return this._handler
+  }
 
   constructor(handler: (props: TEvent) => void) {
     super()
@@ -47,6 +53,24 @@ export class EventBus {
     eventListeners.push(new EventHandler(listener) as IEventHandler)
   }
 
+  removeEventListener<TEvent>(
+    EventCtor: new (props: TEvent) => TEvent,
+    listener: (props: TEvent) => void,
+    key?: string
+  ): void {
+    if (key) {
+      this._removeKeyedEventListener(EventCtor, listener, key)
+      return
+    }
+    let eventListeners = this._listeners.get(EventCtor)
+    if (eventListeners) {
+      eventListeners = eventListeners.filter(
+        (eventListener) => eventListener.getHandler() !== listener
+      )
+      this._listeners.set(EventCtor, eventListeners)
+    }
+  }
+
   private _subscribeToKeyedEvent<TEvent>(
     EventCtor: new (props: TEvent) => TEvent,
     listener: (props: TEvent) => void,
@@ -63,6 +87,24 @@ export class EventBus {
       keyListenersMap.set(key, listenersForKey)
     }
     listenersForKey.push(new EventHandler(listener) as IEventHandler)
+  }
+
+  private _removeKeyedEventListener<TEvent>(
+    EventCtor: new (props: TEvent) => TEvent,
+    listener: (props: TEvent) => void,
+    key: string
+  ) {
+    let keyListenersMap = this._keyedListeners.get(EventCtor)
+    if (!keyListenersMap) {
+      return
+    }
+    let listenersForKey = keyListenersMap.get(key)
+    if (listenersForKey) {
+      listenersForKey = listenersForKey.filter(
+        (eventListener) => eventListener.getHandler() !== listener
+      )
+      keyListenersMap.set(key, listenersForKey)
+    }
   }
 
   emitEvent<TEvent>(

@@ -111,6 +111,18 @@ class App {
     }
   }
 
+  removePluginEventListener<TEvent>(
+    pluginFactory: PluginFactory,
+    EventCtor: new (eventData: TEvent) => TEvent,
+    listener: (eventData: TEvent) => void
+  ) {
+    const plugin = this._registry.getPluginByName(pluginFactory.pluginName!)
+
+    if (plugin) {
+      plugin.removeListener(EventCtor, listener)
+    }
+  }
+
   run() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', this._start.bind(this))

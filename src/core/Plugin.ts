@@ -173,6 +173,13 @@ export abstract class IPlugin<
     this._internalEventBus.subscribeToEvent(eventCtor, listener)
   }
 
+  removeListener<TEvent>(
+    eventCtor: new (eventData: TEvent) => TEvent,
+    listener: (eventData: TEvent) => void
+  ) {
+    this._internalEventBus.removeEventListener(eventCtor, listener)
+  }
+
   useEventPlugin<
     TConfig extends PluginConfig = PluginConfig,
     TPluginApi extends PluginApi = PluginApi
