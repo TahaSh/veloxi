@@ -65,6 +65,7 @@ declare class App {
     getPlugin<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi;
     getPlugins<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi[];
     onPluginEvent<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
+    removePluginEventListener<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     run(): void;
     ready<TPluginApi extends PluginApi>(pluginName: string, callback: ReadyCallback<TPluginApi>): void;
     private _start;
@@ -329,7 +330,9 @@ export declare class EventBus {
     private _listeners;
     private _keyedListeners;
     subscribeToEvent<TEvent>(EventCtor: new (props: TEvent) => TEvent, listener: (props: TEvent) => void, key?: string): void;
+    removeEventListener<TEvent>(EventCtor: new (props: TEvent) => TEvent, listener: (props: TEvent) => void, key?: string): void;
     private _subscribeToKeyedEvent;
+    private _removeKeyedEventListener;
     emitEvent<TEvent>(EventCtor: new (props: TEvent) => TEvent, props: TEvent, key?: string): void;
     private _emitKeyedEvent;
     private _convertListener;
@@ -389,6 +392,7 @@ declare abstract class IPlugin<TConfig extends PluginConfig = PluginConfig, TPlu
     get internalBusEvent(): EventBus;
     emit<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, eventData: TEvent): void;
     on<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
+    removeListener<TEvent>(eventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     useEventPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): EventPlugin<TConfig, TPluginApi>;
     notifyAboutDataChanged(data: ChangedData): void;
     onDataChanged(data: ChangedData): void;
