@@ -560,6 +560,8 @@ declare class PositionProp extends ViewProp<Vec2> implements ViewPosition {
     isTransform(): boolean;
 }
 
+declare function randomNumber(min: number, max: number): number;
+
 declare type ReadyCallback<TPluginApi extends PluginApi> = (pluginApi: TPluginApi) => void;
 
 declare interface RectSize {
@@ -732,7 +734,8 @@ declare namespace Utils {
         clamp,
         valueAtPercentage,
         remap,
-        pointToViewProgress
+        pointToViewProgress,
+        randomNumber
     }
 }
 export { Utils }
