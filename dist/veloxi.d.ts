@@ -239,6 +239,8 @@ declare type Direction = 'up' | 'down' | 'left' | 'right';
 
 declare type Direction_2 = 'up' | 'down' | 'left' | 'right';
 
+declare function distanceBetweenTwoPoints(pointA: Point, pointB: Point): number;
+
 declare class DragEvent_2 {
     props: {
         view: View;
@@ -248,6 +250,7 @@ declare class DragEvent_2 {
         y: number;
         width: number;
         height: number;
+        distance: number;
         isDragging: boolean;
         target: EventTarget | null;
         directions: Array<Direction>;
@@ -262,6 +265,7 @@ declare class DragEvent_2 {
     directions: Array<Direction>;
     width: number;
     height: number;
+    distance: number;
     constructor(props: {
         view: View;
         previousX: number;
@@ -270,6 +274,7 @@ declare class DragEvent_2 {
         y: number;
         width: number;
         height: number;
+        distance: number;
         isDragging: boolean;
         target: EventTarget | null;
         directions: Array<Direction>;
@@ -735,7 +740,8 @@ declare namespace Utils {
         valueAtPercentage,
         remap,
         pointToViewProgress,
-        randomNumber
+        randomNumber,
+        distanceBetweenTwoPoints
     }
 }
 export { Utils }
