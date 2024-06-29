@@ -1,4 +1,4 @@
-import { EventBus, Events } from '..'
+import { EventBus, Events, Utils } from '..'
 import { EventPlugin } from '../core/Plugin'
 
 import { View } from '../core/View'
@@ -17,6 +17,7 @@ export class DragEvent {
   directions: Array<Direction> = []
   width: number
   height: number
+  distance: number
   constructor(
     public props: {
       view: View
@@ -26,6 +27,7 @@ export class DragEvent {
       y: number
       width: number
       height: number
+      distance: number
       isDragging: boolean
       target: EventTarget | null
       directions: Array<Direction>
@@ -37,6 +39,7 @@ export class DragEvent {
     this.y = props.y
     this.width = props.width
     this.height = props.height
+    this.distance = props.distance
     this.view = props.view
     this.isDragging = props.isDragging
     this.target = props.target
@@ -144,6 +147,10 @@ export class DragEventPlugin extends EventPlugin {
 
     const height = this._pointerY - this._initialPointer.y
     const width = this._pointerX - this._initialPointer.x
+    const distance = Utils.distanceBetweenTwoPoints(this._initialPointer, {
+      x: this._pointerX,
+      y: this._pointerY
+    })
 
     const target = this._targetPerView.get(view.id)
     if (!target) return
@@ -162,6 +169,7 @@ export class DragEventPlugin extends EventPlugin {
       previousY,
       x,
       y,
+      distance,
       width,
       height,
       isDragging,
