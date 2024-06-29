@@ -4,5 +4,6 @@ export {
   valueAtPercentage,
   remap,
   pointToViewProgress,
-  randomNumber
+  randomNumber,
+  distanceBetweenTwoPoints
 } from './Math'

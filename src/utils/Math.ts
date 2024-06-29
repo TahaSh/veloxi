@@ -9,6 +9,12 @@ export function randomNumber(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
+export function distanceBetweenTwoPoints(pointA: Point, pointB: Point): number {
+  const dx = pointB.x - pointA.x
+  const dy = pointB.y - pointA.y
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
 export function valueAtPercentage(
   from: number,
   to: number,
