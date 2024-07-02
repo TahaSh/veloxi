@@ -1,5 +1,6 @@
 import { Vec2 } from '../math'
 import { CSSNumber, createCSSNumber } from '../utils/CSSNumber'
+import { almostEqual } from '../utils/Math'
 import {
   Animator,
   AnimatorUpdateData,
@@ -61,7 +62,7 @@ export class NumberDynamicAnimator extends DynamicAnimator<number> {
 
     let result = current + velocity * dt
 
-    if (this._shouldFinish(target, current, velocity)) {
+    if (almostEqual(result, target)) {
       result = target
       requestAnimationFrame(() => {
         animatorProp.callCompleteCallback()
@@ -71,11 +72,6 @@ export class NumberDynamicAnimator extends DynamicAnimator<number> {
     animatorProp.callUpdateCallback()
 
     return result
-  }
-
-  private _shouldFinish(target: number, current: number, velocity: number) {
-    const diff = Math.abs(target - current)
-    return diff < ERROR_OFFSET && Math.abs(velocity) < ERROR_OFFSET
   }
 }
 

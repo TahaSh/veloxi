@@ -1,5 +1,6 @@
 import { Vec2 } from '../math'
 import { CSSNumber, createCSSNumber } from '../utils/CSSNumber'
+import { almostEqual } from '../utils/Math'
 import {
   Animator,
   AnimatorUpdateData,
@@ -76,7 +77,7 @@ export class NumberSpringAnimator extends SpringAnimator<number> {
 
     let result = current + this._velocity * dt * this._config.speed
 
-    if (this._shouldFinish(target, current)) {
+    if (almostEqual(result, target)) {
       result = target
       requestAnimationFrame(() => {
         animatorProp.callCompleteCallback()
@@ -84,11 +85,6 @@ export class NumberSpringAnimator extends SpringAnimator<number> {
     }
 
     return result
-  }
-
-  private _shouldFinish(target: number, current: number) {
-    const diff = Math.abs(target - current)
-    return diff < ERROR_OFFSET && Math.abs(this._velocity) < ERROR_OFFSET
   }
 }
 
