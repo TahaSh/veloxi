@@ -555,7 +555,7 @@ function Ye(a, e, t = !1) {
 function ce(a, e) {
   return Ye(a, e, !0);
 }
-class R {
+class P {
   constructor(e, t, i, s) {
     o(this, "_topLeft");
     o(this, "_topRight");
@@ -593,15 +593,15 @@ function z(a) {
   };
   switch (e.length) {
     case 1:
-      return new R(e[0], e[0], e[0], e[0]);
+      return new P(e[0], e[0], e[0], e[0]);
     case 2:
-      return new R(e[0], e[1], e[0], e[1]);
+      return new P(e[0], e[1], e[0], e[1]);
     case 3:
-      return new R(e[0], e[1], e[2], e[1]);
+      return new P(e[0], e[1], e[2], e[1]);
     case 4:
-      return new R(e[0], e[1], e[3], e[2]);
+      return new P(e[0], e[1], e[3], e[2]);
     default:
-      return new R(
+      return new P(
         t,
         t,
         t,
@@ -753,7 +753,7 @@ function W(a, e) {
   };
   return new Proxy(a, t);
 }
-const P = 0.01, Y = {
+const N = 0.01, Y = {
   speed: 15
 };
 class X {
@@ -775,19 +775,16 @@ class tt extends X {
     })), e.callUpdateCallback(), u;
   }
   _shouldFinish(e, t, i) {
-    return l.sub(e, t).magnitude < P && i.magnitude < P;
+    return l.sub(e, t).magnitude < N && i.magnitude < N;
   }
 }
 class it extends X {
   update({ animatorProp: e, current: t, target: i, dt: s }) {
     const r = (i - t) * this._config.speed;
     let u = t + r * s;
-    return this._shouldFinish(i, t, r) && (u = i, requestAnimationFrame(() => {
+    return p(u, i) && (u = i, requestAnimationFrame(() => {
       e.callCompleteCallback();
     })), e.callUpdateCallback(), u;
-  }
-  _shouldFinish(e, t, i) {
-    return Math.abs(e - t) < P && Math.abs(i) < P;
   }
 }
 class st extends X {
@@ -801,7 +798,7 @@ class st extends X {
     });
   }
   _shouldFinish(e, t, i) {
-    return Math.abs(e - t) < P && Math.abs(i) < P;
+    return Math.abs(e - t) < N && Math.abs(i) < N;
   }
 }
 class j {
@@ -822,7 +819,7 @@ const H = {
   stiffness: 0.5,
   damping: 0.75,
   speed: 10
-}, b = 0.01;
+}, I = 0.01;
 class K {
   constructor(e) {
     o(this, "name", "spring");
@@ -853,7 +850,7 @@ class nt extends K {
     })), u;
   }
   _shouldFinish(t, i) {
-    return l.sub(t, i).magnitude < b && this._velocity.magnitude < b;
+    return l.sub(t, i).magnitude < I && this._velocity.magnitude < I;
   }
 }
 class rt extends K {
@@ -865,12 +862,9 @@ class rt extends K {
     const r = -(i - s) * this._config.stiffness;
     this._velocity += r, this._velocity *= this._config.damping;
     let u = i + this._velocity * n * this._config.speed;
-    return this._shouldFinish(s, i) && (u = s, requestAnimationFrame(() => {
+    return p(u, s) && (u = s, requestAnimationFrame(() => {
       t.callCompleteCallback();
     })), u;
-  }
-  _shouldFinish(t, i) {
-    return Math.abs(t - i) < b && Math.abs(this._velocity) < b;
   }
 }
 class at extends K {
@@ -890,7 +884,7 @@ class at extends K {
     });
   }
   _shouldFinish(t, i) {
-    return Math.abs(t - i) < b && Math.abs(this._velocity) < b;
+    return Math.abs(t - i) < I && Math.abs(this._velocity) < I;
   }
 }
 function ot(a) {
@@ -962,7 +956,7 @@ class J {
     return this.createInstantAnimator();
   }
 }
-class I extends J {
+class A extends J {
   createInstantAnimator() {
     return new j();
   }
@@ -1007,7 +1001,7 @@ class ge extends J {
     return new rt({ ...H, ...e });
   }
 }
-function x(a) {
+function b(a) {
   return structuredClone(a);
 }
 class dt {
@@ -1057,7 +1051,7 @@ class V {
     o(this, "_view");
     o(this, "_animatorFactory");
     o(this, "_previousRenderValue");
-    this._animatorProp = new dt(this), this._animatorFactory = e, this._initialValue = x(t), this._previousValue = x(t), this._targetValue = x(t), this._currentValue = x(t), this._hasChanged = !1, this._previousRenderValue = void 0, this._view = i, this._animator = this._animatorFactory.createInstantAnimator();
+    this._animatorProp = new dt(this), this._animatorFactory = e, this._initialValue = b(t), this._previousValue = b(t), this._targetValue = b(t), this._currentValue = b(t), this._hasChanged = !1, this._previousRenderValue = void 0, this._view = i, this._animator = this._animatorFactory.createInstantAnimator();
   }
   get shouldRender() {
     return !0;
@@ -1085,7 +1079,7 @@ class V {
   }
   _setTarget(e, t = !0) {
     var i, s;
-    this._previousValue = x(this._currentValue), this._targetValue = e, t ? ((s = (i = this._animator).reset) == null || s.call(i), this.animator.markAsAnimating()) : this._currentValue = e, this._hasChanged = !0;
+    this._previousValue = b(this._currentValue), this._targetValue = e, t ? ((s = (i = this._animator).reset) == null || s.call(i), this.animator.markAsAnimating()) : this._currentValue = e, this._hasChanged = !0;
   }
   hasChanged() {
     return this._hasChanged;
@@ -1405,25 +1399,25 @@ class ft extends V {
     })(), c) {
       if (this._currentValue.x !== 0 || this._currentValue.y !== 0 || this._view.scale._currentValue.x !== 1 || this._view.scale._currentValue.y !== 1) {
         if (!s) {
-          const T = this._rect.pageOffset.left - this._previousRect.pageOffset.left, A = this._rect.pageOffset.top - this._previousRect.pageOffset.top;
+          const x = this._rect.pageOffset.left - this._previousRect.pageOffset.left, E = this._rect.pageOffset.top - this._previousRect.pageOffset.top;
           this._setTarget(
-            new l(this._currentValue.x - T, this._currentValue.y - A),
+            new l(this._currentValue.x - x, this._currentValue.y - E),
             !1
           );
           return;
         }
-        const y = this._view._parent, ie = this._rect.pageOffset, se = this._view.getScroll(), E = {
+        const y = this._view._parent, ie = this._rect.pageOffset, se = this._view.getScroll(), R = {
           left: this._previousRect.viewportOffset.left + se.x,
           top: this._previousRect.viewportOffset.top + se.y
-        }, Te = E.left - ie.left, Ae = E.top - ie.top;
+        }, Te = R.left - ie.left, Ae = R.top - ie.top;
         let ne = 0, re = 0, ae = 0, oe = 0;
         if (y && y.position.animator.name !== "instant") {
-          const T = y.rect.pageOffset, A = y.getScroll(), N = {
-            left: y.previousRect.viewportOffset.left + A.x,
-            top: y.previousRect.viewportOffset.top + A.y
+          const x = y.rect.pageOffset, E = y.getScroll(), T = {
+            left: y.previousRect.viewportOffset.left + E.x,
+            top: y.previousRect.viewportOffset.top + E.y
           };
-          ne = N.left - T.left, re = N.top - T.top;
-          const ue = E.top - N.top, le = E.left - N.left, Ne = y.scale.y * ue;
+          ne = T.left - x.left, re = T.top - x.top;
+          const ue = R.top - T.top, le = R.left - T.left, Ne = y.scale.y * ue;
           ae = (ue - Ne) / y.scale.y;
           const Ie = y.scale.x * le;
           oe = (le - Ie) / y.scale.x;
@@ -1684,17 +1678,17 @@ class yt {
     o(this, "_props", /* @__PURE__ */ new Map());
     this._props.set(
       "position",
-      new ft(new I(), new l(0, 0), e)
+      new ft(new A(), new l(0, 0), e)
     ), this._props.set(
       "scale",
-      new vt(new I(), new l(1, 1), e)
+      new vt(new A(), new l(1, 1), e)
     ), this._props.set(
       "rotation",
       new mt(new ge(), 0, e)
     ), this._props.set(
       "size",
       new wt(
-        new I(),
+        new A(),
         new l(e.rect.size.width, e.rect.size.height),
         e
       )
@@ -1720,7 +1714,7 @@ class yt {
     ), this._props.set(
       "origin",
       new pt(
-        new I(),
+        new A(),
         e.elementReader.origin.value,
         e
       )
