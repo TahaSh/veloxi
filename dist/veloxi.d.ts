@@ -544,7 +544,7 @@ declare class PointerMoveEvent extends PointerEvent_2 {
 declare class PointerUpEvent extends PointerEvent_2 {
 }
 
-declare function pointToViewProgress(point: Partial<Point>, view: View, maxDistance: number): number;
+declare function pointToViewProgress(point: Partial<Point>, view: View, maxDistance: number, completeDistance?: number): number;
 
 declare class PositionProp extends ViewProp<Vec2> implements ViewPosition {
     private _animateLayoutUpdateNextFrame;
