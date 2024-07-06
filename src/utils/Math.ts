@@ -42,7 +42,8 @@ export function remap(
 export function pointToViewProgress(
   point: Partial<Point>,
   view: View,
-  maxDistance: number
+  maxDistance: number,
+  completeDistance?: number
 ) {
   const viewScroll = view.getScroll()
   const viewPositionX = view.position.x - viewScroll.x
@@ -52,6 +53,13 @@ export function pointToViewProgress(
   const dx = Math.abs(viewPositionX - x)
   const dy = Math.abs(viewPositionY - y)
   const distance = Math.sqrt(dx * dx + dy * dy)
-  const progress = clamp(0, distance / maxDistance, 1)
+  let progress = clamp(0, distance / maxDistance, 1)
+  if (typeof completeDistance === 'undefined') {
+    return 1 - progress
+  }
+  if (distance <= completeDistance) {
+    return 1
+  }
+  progress = clamp((distance - completeDistance) / maxDistance, 0, 1)
   return 1 - progress
 }

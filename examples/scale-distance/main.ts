@@ -23,7 +23,8 @@ const ScaleDistancePlugin: PluginFactory = (context) => {
         y: event.y - circle.size.height / 2
       },
       circle,
-      200
+      200,
+      100
     )
     const scale = Utils.remap(progress, 0, 1, 1, 2)
     circle.scale.set(scale)
