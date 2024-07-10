@@ -276,6 +276,10 @@ export class Registry {
     return this._views.find((view) => view.id === viewId)
   }
 
+  public getViewsById(viewIds: string[]): CoreView[] {
+    return this._views.filter((view) => viewIds.includes(view.id))
+  }
+
   private _getPluginById<
     TConfig extends PluginConfig = PluginConfig,
     TPluginApi extends PluginApi = PluginApi

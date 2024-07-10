@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drag to Swap</title>
+  </head>
+  <body>
+    <div class="wrapper" data-vel-plugin="DragToSwap" data-vel-view="root">
+      <div data-slot="a" data-vel-view="slot" class="box a">
+        <div
+          data-item="a"
+          data-vel-view="item"
+          data-vel-layout-id="a"
+          class="item a"
+        >
+          <div>A</div>
+        </div>
+      </div>
+      <div data-slot="b" data-vel-view="slot" class="box b">
+        <div
+          data-item="b"
+          data-vel-view="item"
+          data-vel-layout-id="b"
+          class="item b"
+        >
+          <div>B</div>
+        </div>
+      </div>
+      <div data-slot="c" data-vel-view="slot" class="box c">
+        <div
+          data-item="c"
+          data-vel-view="item"
+          data-vel-layout-id="c"
+          class="item c"
+        >
+          <div class="calendar">
+            <div class="calendar-content">
+              <div class="title" data-vel-view="content">Calendar</div>
+              <div class="date" data-vel-view="content">
+                Tuesday, July 9, 2024
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-slot="d" data-vel-view="slot" class="box d">
+        <div
+          data-item="d"
+          data-vel-view="item"
+          data-vel-layout-id="d"
+          class="item d"
+        >
+          <div>D</div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -33,6 +33,9 @@ export interface View {
   overlapsWith(view: View): boolean
   intersects(x: number, y: number): boolean
   hasElement(element: HTMLElement): boolean
+  getChild(viewName: string): View
+  getChildren(viewName: string): View[]
+  getParent(viewName: string): View | undefined
 
   position: ViewPosition
   opacity: ViewOpacity
@@ -56,7 +59,7 @@ interface OnRemoveCallback {
   (view: CoreView, done: () => void): void
 }
 
-export class CoreView {
+export class CoreView implements View {
   readonly id: string
   name: string
   element: HTMLElement
@@ -454,5 +457,31 @@ export class CoreView {
           ?.setAnimator(animator.name, animator.config)
       }
     })
+  }
+
+  public getChildren(viewName: string): View[] {
+    const viewIds = Array.from(this.element.children)
+      .filter((child) => {
+        const childEl = child as HTMLElement
+        return (
+          typeof childEl.dataset.velViewId !== 'undefined' &&
+          childEl.dataset.velView === viewName
+        )
+      })
+      .map((child) => (child as HTMLElement).dataset.velViewId!)
+    return this._registry.getViewsById(viewIds)
+  }
+
+  public getChild(viewName: string): View {
+    return this.getChildren(viewName)[0]
+  }
+
+  public getParent(viewName: string): View | undefined {
+    const parentElement = this.element.parentElement
+    if (!parentElement) return
+    const viewId = parentElement.dataset.velViewId
+    if (!viewId) return
+    if (parentElement.dataset.velView !== viewName) return
+    return this._registry.getViewById(viewId)
   }
 }

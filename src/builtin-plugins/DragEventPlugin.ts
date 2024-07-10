@@ -12,6 +12,8 @@ export class DragEvent {
   previousY: number
   x: number
   y: number
+  pointerX: number
+  pointerY: number
   isDragging: boolean
   target: EventTarget | null
   directions: Array<Direction> = []
@@ -25,6 +27,8 @@ export class DragEvent {
       previousY: number
       x: number
       y: number
+      pointerX: number
+      pointerY: number
       width: number
       height: number
       distance: number
@@ -37,6 +41,8 @@ export class DragEvent {
     this.previousY = props.previousY
     this.x = props.x
     this.y = props.y
+    this.pointerX = props.pointerX
+    this.pointerY = props.pointerY
     this.width = props.width
     this.height = props.height
     this.distance = props.distance
@@ -138,6 +144,8 @@ export class DragEventPlugin extends EventPlugin {
       logs && logs.length >= 2 ? logs[logs.length - 2] : null
     const x = this._pointerX - this._initialPointerPerView.get(view.id)!.x
     const y = this._pointerY - this._initialPointerPerView.get(view.id)!.y
+    const pointerX = this._pointerX
+    const pointerY = this._pointerY
     const previousX = previousPointer
       ? previousPointer.x - this._initialPointerPerView.get(view.id)!.x
       : x
@@ -169,6 +177,8 @@ export class DragEventPlugin extends EventPlugin {
       previousY,
       x,
       y,
+      pointerX,
+      pointerY,
       distance,
       width,
       height,
