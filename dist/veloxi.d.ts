@@ -141,7 +141,7 @@ export declare class ClickEventPlugin extends EventPlugin {
 
 declare type CompleteCallback = () => void;
 
-declare class CoreView {
+declare class CoreView implements View {
     readonly id: string;
     name: string;
     element: HTMLElement;
@@ -207,6 +207,9 @@ declare class CoreView {
     get viewProps(): ViewPropCollection;
     getPropByName(propName: ViewPropName): IViewProp | undefined;
     _copyAnimatorsToAnotherView(view: CoreView): void;
+    getChildren(viewName: string): View[];
+    getChild(viewName: string): View;
+    getParent(viewName: string): View | undefined;
 }
 
 export declare function createApp(): App;
@@ -248,6 +251,8 @@ declare class DragEvent_2 {
         previousY: number;
         x: number;
         y: number;
+        pointerX: number;
+        pointerY: number;
         width: number;
         height: number;
         distance: number;
@@ -260,6 +265,8 @@ declare class DragEvent_2 {
     previousY: number;
     x: number;
     y: number;
+    pointerX: number;
+    pointerY: number;
     isDragging: boolean;
     target: EventTarget | null;
     directions: Array<Direction>;
@@ -272,6 +279,8 @@ declare class DragEvent_2 {
         previousY: number;
         x: number;
         y: number;
+        pointerX: number;
+        pointerY: number;
         width: number;
         height: number;
         distance: number;
@@ -602,6 +611,7 @@ declare class Registry {
     removeViewById(viewId: ViewId, pluginId: PluginId): void;
     private _unassignViewFromPlugin;
     getViewById(viewId: string): CoreView | undefined;
+    getViewsById(viewIds: string[]): CoreView[];
     private _getPluginById;
     private _getPluginViewById;
     destroy(pluginName?: string, callback?: () => void): void;
@@ -786,6 +796,9 @@ export declare interface View {
     overlapsWith(view: View): boolean;
     intersects(x: number, y: number): boolean;
     hasElement(element: HTMLElement): boolean;
+    getChild(viewName: string): View;
+    getChildren(viewName: string): View[];
+    getParent(viewName: string): View | undefined;
     position: ViewPosition;
     opacity: ViewOpacity;
     borderRadius: ViewBorderRadius;
