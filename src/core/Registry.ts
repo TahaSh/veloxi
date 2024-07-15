@@ -476,7 +476,8 @@ export class Registry {
   >(
     pluginFactory: PluginFactory<TConfig, TPluginApi>,
     eventBus: EventBus,
-    config: TConfig = {} as TConfig
+    config: TConfig = {} as TConfig,
+    forUpdate = false
   ): IPlugin<TConfig, TPluginApi> {
     if (!pluginFactory.pluginName) {
       throw Error(
@@ -485,9 +486,10 @@ export class Registry {
     }
     let scopeRoots: Array<HTMLElement> = []
     if (pluginFactory.scope) {
-      const domEls = document.querySelectorAll<HTMLElement>(
-        `[data-vel-plugin=${pluginFactory.pluginName}][data-vel-view=${pluginFactory.scope}]`
-      )
+      const domElsSelector = forUpdate
+        ? `[data-vel-plugin=${pluginFactory.pluginName}][data-vel-view=${pluginFactory.scope}]:not([data-vel-plugin-id])`
+        : `[data-vel-plugin=${pluginFactory.pluginName}][data-vel-view=${pluginFactory.scope}]`
+      const domEls = document.querySelectorAll<HTMLElement>(domElsSelector)
 
       if (!this._pluginNameToPluginFactoryMap.has(pluginFactory.pluginName)) {
         this._pluginNameToPluginFactoryMap.set(
@@ -566,6 +568,17 @@ export class Registry {
       )
     }
     return plugin
+  }
+
+  updatePlugin<
+    TConfig extends PluginConfig = PluginConfig,
+    TPluginApi extends PluginApi = PluginApi
+  >(
+    pluginFactory: PluginFactory<TConfig, TPluginApi>,
+    eventBus: EventBus,
+    config: TConfig = {} as TConfig
+  ): IPlugin<TConfig, TPluginApi> {
+    return this.createPlugin(pluginFactory, eventBus, config, true)
   }
 
   getViews(): ReadonlyArray<CoreView> {

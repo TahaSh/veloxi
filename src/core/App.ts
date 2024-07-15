@@ -57,6 +57,18 @@ class App {
     }
   }
 
+  updatePlugin<
+    TConfig extends PluginConfig = PluginConfig,
+    TPluginApi extends PluginApi = PluginApi
+  >(
+    pluginFactory: PluginFactory<TConfig, TPluginApi>,
+    config: TConfig = {} as TConfig
+  ): void {
+    if (this._registry.hasPlugin(pluginFactory)) {
+      this._registry.updatePlugin(pluginFactory, this._eventBus, config)
+    }
+  }
+
   reset(pluginName?: string, callback?: () => void) {
     this._registry.reset(pluginName, callback)
   }
@@ -99,12 +111,16 @@ class App {
     return plugins.map((plugin) => plugin.api) as TPluginApi[]
   }
 
-  onPluginEvent<TEvent>(
-    pluginFactory: PluginFactory,
+  onPluginEvent<TPlugin extends PluginFactory<any, any>, TEvent>(
+    pluginFactory: TPlugin,
     EventCtor: new (eventData: TEvent) => TEvent,
-    listener: (eventData: TEvent) => void
+    listener: (eventData: TEvent) => void,
+    pluginKey?: string
   ) {
-    const plugin = this._registry.getPluginByName(pluginFactory.pluginName!)
+    const plugin = this._registry.getPluginByName(
+      pluginFactory.pluginName!,
+      pluginKey
+    )
 
     if (plugin) {
       plugin.on(EventCtor, listener)
