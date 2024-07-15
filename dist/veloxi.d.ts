@@ -60,11 +60,12 @@ declare class App {
     static create(): App;
     constructor();
     addPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
+    updatePlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
     reset(pluginName?: string, callback?: () => void): void;
     destroy(pluginName?: string, callback?: () => void): void;
     getPlugin<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi;
     getPlugins<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi[];
-    onPluginEvent<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
+    onPluginEvent<TPlugin extends PluginFactory<any, any>, TEvent>(pluginFactory: TPlugin, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void, pluginKey?: string): void;
     removePluginEventListener<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
     run(): void;
     ready<TPluginApi extends PluginApi>(pluginName: string, callback: ReadyCallback<TPluginApi>): void;
@@ -627,7 +628,8 @@ declare class Registry {
     getPluginByName(pluginName: string, pluginKey?: string): IPlugin | undefined;
     getPluginsByName(pluginName: string, pluginKey?: string): IPlugin[];
     hasPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>): boolean;
-    createPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, eventBus: EventBus, config?: TConfig): IPlugin<TConfig, TPluginApi>;
+    createPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, eventBus: EventBus, config?: TConfig, forUpdate?: boolean): IPlugin<TConfig, TPluginApi>;
+    updatePlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, eventBus: EventBus, config?: TConfig): IPlugin<TConfig, TPluginApi>;
     getViews(): ReadonlyArray<CoreView>;
     createView(domEl: HTMLElement, name: string, layoutId?: string): CoreView;
     assignViewToPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(view: View, plugin: IPlugin<TConfig, TPluginApi>): void;
