@@ -1,7 +1,7 @@
 // ************************************************************
 // ** Core
 // ************************************************************
-export { createApp } from './core/App'
+export { createApp, type VeloxiApp } from './core/App'
 export {
   EventPlugin,
   Plugin,
