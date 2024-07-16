@@ -748,7 +748,7 @@ declare class Vec2 {
     static add(v1: Vec2, v2: Vec2): Vec2;
 }
 
-declare interface VeloxiApp {
+export declare interface VeloxiApp {
     addPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
     updatePlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
     reset(pluginName?: string, callback?: () => void): void;
