@@ -52,36 +52,6 @@ declare interface AnimatorUpdateData<TValue> {
     dt: number;
 }
 
-declare class App {
-    private _previousTime;
-    private readonly _registry;
-    private readonly _eventBus;
-    private readonly _appEventBus;
-    static create(): App;
-    constructor();
-    addPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
-    updatePlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
-    reset(pluginName?: string, callback?: () => void): void;
-    destroy(pluginName?: string, callback?: () => void): void;
-    getPlugin<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi;
-    getPlugins<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi[];
-    onPluginEvent<TPlugin extends PluginFactory<any, any>, TEvent>(pluginFactory: TPlugin, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void, pluginKey?: string): void;
-    removePluginEventListener<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
-    run(): void;
-    ready<TPluginApi extends PluginApi>(pluginName: string, callback: ReadyCallback<TPluginApi>): void;
-    private _start;
-    private _setup;
-    private _listenToNativeEvents;
-    private _tick;
-    private _subscribeToEvents;
-    private _onNodeAdded;
-    private _onNodeRemoved;
-    private _onDataChanged;
-    private _read;
-    private _update;
-    private _render;
-}
-
 declare class BorderRadiusProp extends ViewProp<CSSNumber[], VHBorderRadiusValue> implements ViewBorderRadius {
     private _invertedBorderRadius?;
     private _forceStyleUpdateThisFrame;
@@ -213,7 +183,7 @@ declare class CoreView implements View {
     getParent(viewName: string): View | undefined;
 }
 
-export declare function createApp(): App;
+export declare function createApp(): VeloxiApp;
 
 declare interface CSSNumber {
     value: number;
@@ -776,6 +746,18 @@ declare class Vec2 {
     static scale(v: Vec2, n: number): Vec2;
     static sub(v1: Vec2, v2: Vec2): Vec2;
     static add(v1: Vec2, v2: Vec2): Vec2;
+}
+
+declare interface VeloxiApp {
+    addPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
+    updatePlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, config?: TConfig): void;
+    reset(pluginName?: string, callback?: () => void): void;
+    destroy(pluginName?: string, callback?: () => void): void;
+    getPlugin<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi;
+    getPlugins<TPluginApi extends PluginApi>(pluginFactory: PluginFactory<PluginConfig> | string, pluginKey?: string): TPluginApi[];
+    onPluginEvent<TPlugin extends PluginFactory<any, any>, TEvent>(pluginFactory: TPlugin, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void, pluginKey?: string): void;
+    removePluginEventListener<TEvent>(pluginFactory: PluginFactory, EventCtor: new (eventData: TEvent) => TEvent, listener: (eventData: TEvent) => void): void;
+    run(): void;
 }
 
 declare interface VHBorderRadiusValue {

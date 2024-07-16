@@ -2363,30 +2363,30 @@ class me {
 }
 class te {
   constructor() {
-    o(this, "_previousTime", 0);
-    o(this, "_registry");
-    o(this, "_eventBus");
-    o(this, "_appEventBus");
-    this._eventBus = new z(), this._appEventBus = new z(), this._registry = new Pt(this._appEventBus, this._eventBus), new Fe(this._eventBus);
+    o(this, "previousTime", 0);
+    o(this, "registry");
+    o(this, "eventBus");
+    o(this, "appEventBus");
+    this.eventBus = new z(), this.appEventBus = new z(), this.registry = new Pt(this.appEventBus, this.eventBus), new Fe(this.eventBus);
   }
   static create() {
     return new te();
   }
   addPlugin(e, t = {}) {
-    this._registry.hasPlugin(e) || this._registry.createPlugin(e, this._eventBus, t);
+    this.registry.hasPlugin(e) || this.registry.createPlugin(e, this.eventBus, t);
   }
   updatePlugin(e, t = {}) {
-    this._registry.hasPlugin(e) && this._registry.updatePlugin(e, this._eventBus, t);
+    this.registry.hasPlugin(e) && this.registry.updatePlugin(e, this.eventBus, t);
   }
   reset(e, t) {
-    this._registry.reset(e, t);
+    this.registry.reset(e, t);
   }
   destroy(e, t) {
-    this._registry.destroy(e, t);
+    this.registry.destroy(e, t);
   }
   getPlugin(e, t) {
     let i = typeof e == "string" ? e : e.pluginName;
-    const s = this._registry.getPluginByName(i, t);
+    const s = this.registry.getPluginByName(i, t);
     if (!s)
       throw new Error(
         `You can't call getPlugin for ${i} with key: ${t} because it does not exist in your app`
@@ -2395,7 +2395,7 @@ class te {
   }
   getPlugins(e, t) {
     let i = typeof e == "string" ? e : e.pluginName;
-    const s = this._registry.getPluginsByName(i, t);
+    const s = this.registry.getPluginsByName(i, t);
     if (s.length === 0)
       throw new Error(
         `You can't call getPlugins for ${i} with key: ${t} because they don't exist in your app`
@@ -2403,102 +2403,96 @@ class te {
     return s.map((n) => n.api);
   }
   onPluginEvent(e, t, i, s) {
-    const n = this._registry.getPluginByName(
+    const n = this.registry.getPluginByName(
       e.pluginName,
       s
     );
     n && n.on(t, i);
   }
   removePluginEventListener(e, t, i) {
-    const s = this._registry.getPluginByName(e.pluginName);
+    const s = this.registry.getPluginByName(e.pluginName);
     s && s.removeListener(t, i);
   }
   run() {
-    document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", this._start.bind(this)) : this._start();
+    document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", this.start.bind(this)) : this.start();
   }
-  ready(e, t) {
-    this._appEventBus.subscribeToPluginReadyEvent(t, e);
+  start() {
+    this.setup(), requestAnimationFrame(this.tick.bind(this));
   }
-  _start() {
-    this._setup(), requestAnimationFrame(this._tick.bind(this));
+  setup() {
+    this.listenToNativeEvents(), this.subscribeToEvents();
   }
-  _setup() {
-    this._listenToNativeEvents(), this._subscribeToEvents();
-  }
-  _listenToNativeEvents() {
+  listenToNativeEvents() {
     document.addEventListener("click", (e) => {
-      this._eventBus.emitEvent(Y, {
+      this.eventBus.emitEvent(Y, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
       });
     }), document.addEventListener("pointermove", (e) => {
-      this._eventBus.emitEvent(B, {
+      this.eventBus.emitEvent(B, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
       });
     }), document.addEventListener("pointerdown", (e) => {
-      this._eventBus.emitEvent(S, {
+      this.eventBus.emitEvent(S, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
       });
     }), document.addEventListener("pointerup", (e) => {
-      this._eventBus.emitEvent(F, {
+      this.eventBus.emitEvent(F, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
       });
     });
   }
-  _tick(e) {
-    let t = (e - this._previousTime) / 1e3;
-    t > 0.016 && (t = 1 / 60), this._previousTime = e, this._eventBus.reset(), this._subscribeToEvents(), this._read(), this._update(e, t), this._render(), requestAnimationFrame(this._tick.bind(this));
+  tick(e) {
+    let t = (e - this.previousTime) / 1e3;
+    t > 0.016 && (t = 1 / 60), this.previousTime = e, this.eventBus.reset(), this.subscribeToEvents(), this.read(), this.update(e, t), this.render(), requestAnimationFrame(this.tick.bind(this));
   }
-  _subscribeToEvents() {
-    this._eventBus.subscribeToEvent(
-      O,
-      this._onNodeAdded.bind(this)
-    ), this._eventBus.subscribeToEvent(
+  subscribeToEvents() {
+    this.eventBus.subscribeToEvent(O, this.onNodeAdded.bind(this)), this.eventBus.subscribeToEvent(
       k,
-      this._onNodeRemoved.bind(this)
-    ), this._eventBus.subscribeToEvent(
+      this.onNodeRemoved.bind(this)
+    ), this.eventBus.subscribeToEvent(
       ve,
-      this._onDataChanged.bind(this)
-    ), this._registry.getPlugins().forEach((e) => {
-      e.subscribeToEvents(this._eventBus);
+      this.onDataChanged.bind(this)
+    ), this.registry.getPlugins().forEach((e) => {
+      e.subscribeToEvents(this.eventBus);
     });
   }
-  _onNodeAdded({ node: e }) {
-    this._registry.queueNodeToBeCreated(e);
+  onNodeAdded({ node: e }) {
+    this.registry.queueNodeToBeCreated(e);
   }
-  _onNodeRemoved({ node: e }) {
-    this._registry.queueNodeToBeRemoved(e);
+  onNodeRemoved({ node: e }) {
+    this.registry.queueNodeToBeRemoved(e);
   }
-  _onDataChanged(e) {
-    this._registry.notifyPluginAboutDataChange(e);
+  onDataChanged(e) {
+    this.registry.notifyPluginAboutDataChange(e);
   }
-  _read() {
-    this._registry.getViews().forEach((e) => {
+  read() {
+    this.registry.getViews().forEach((e) => {
       e.read();
     });
   }
-  _update(e, t) {
-    this._registry.update(), this._registry.getPlugins().slice().reverse().forEach((i) => {
+  update(e, t) {
+    this.registry.update(), this.registry.getPlugins().slice().reverse().forEach((i) => {
       i.init();
-    }), this._registry.getRenderablePlugins().forEach((i) => {
+    }), this.registry.getRenderablePlugins().forEach((i) => {
       i.update(e, t);
-    }), this._registry.getViews().forEach((i) => {
+    }), this.registry.getViews().forEach((i) => {
       i.update(e, t);
-    }), this._registry.getViews().forEach((i) => {
+    }), this.registry.getViews().forEach((i) => {
       i._updatePreviousRect();
     });
   }
-  _render() {
-    this._registry.getRenderablePlugins().forEach((e) => {
+  render() {
+    this.registry.getRenderablePlugins().forEach((e) => {
       e.render();
-    }), this._registry.getViews().forEach((e) => {
+    }), this.registry.getViews().forEach((e) => {
       e.render();
     });
   }
