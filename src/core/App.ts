@@ -28,21 +28,68 @@ export class PluginReadySetupEvent {
   }
 }
 
-class App {
-  private _previousTime: number = 0
-  private readonly _registry: Registry
-  private readonly _eventBus: EventBus
-  private readonly _appEventBus: EventBus
+export interface VeloxiApp {
+  addPlugin<
+    TConfig extends PluginConfig = PluginConfig,
+    TPluginApi extends PluginApi = PluginApi
+  >(
+    pluginFactory: PluginFactory<TConfig, TPluginApi>,
+    config?: TConfig
+  ): void
+
+  updatePlugin<
+    TConfig extends PluginConfig = PluginConfig,
+    TPluginApi extends PluginApi = PluginApi
+  >(
+    pluginFactory: PluginFactory<TConfig, TPluginApi>,
+    config?: TConfig
+  ): void
+
+  reset(pluginName?: string, callback?: () => void): void
+
+  destroy(pluginName?: string, callback?: () => void): void
+
+  getPlugin<TPluginApi extends PluginApi>(
+    pluginFactory: PluginFactory<PluginConfig> | string,
+    pluginKey?: string
+  ): TPluginApi
+
+  getPlugins<TPluginApi extends PluginApi>(
+    pluginFactory: PluginFactory<PluginConfig> | string,
+    pluginKey?: string
+  ): TPluginApi[]
+
+  onPluginEvent<TPlugin extends PluginFactory<any, any>, TEvent>(
+    pluginFactory: TPlugin,
+    EventCtor: new (eventData: TEvent) => TEvent,
+    listener: (eventData: TEvent) => void,
+    pluginKey?: string
+  ): void
+
+  removePluginEventListener<TEvent>(
+    pluginFactory: PluginFactory,
+    EventCtor: new (eventData: TEvent) => TEvent,
+    listener: (eventData: TEvent) => void
+  ): void
+
+  run(): void
+}
+
+class App implements VeloxiApp {
+  private previousTime: number = 0
+  private readonly registry: Registry
+  private readonly eventBus: EventBus
+  private readonly appEventBus: EventBus
 
   static create() {
     return new App()
   }
 
   constructor() {
-    this._eventBus = new EventBus()
-    this._appEventBus = new EventBus()
-    this._registry = new Registry(this._appEventBus, this._eventBus)
-    new DomObserver(this._eventBus)
+    this.eventBus = new EventBus()
+    this.appEventBus = new EventBus()
+    this.registry = new Registry(this.appEventBus, this.eventBus)
+    new DomObserver(this.eventBus)
   }
 
   addPlugin<
@@ -52,8 +99,8 @@ class App {
     pluginFactory: PluginFactory<TConfig, TPluginApi>,
     config: TConfig = {} as TConfig
   ): void {
-    if (!this._registry.hasPlugin(pluginFactory)) {
-      this._registry.createPlugin(pluginFactory, this._eventBus, config)
+    if (!this.registry.hasPlugin(pluginFactory)) {
+      this.registry.createPlugin(pluginFactory, this.eventBus, config)
     }
   }
 
@@ -64,17 +111,17 @@ class App {
     pluginFactory: PluginFactory<TConfig, TPluginApi>,
     config: TConfig = {} as TConfig
   ): void {
-    if (this._registry.hasPlugin(pluginFactory)) {
-      this._registry.updatePlugin(pluginFactory, this._eventBus, config)
+    if (this.registry.hasPlugin(pluginFactory)) {
+      this.registry.updatePlugin(pluginFactory, this.eventBus, config)
     }
   }
 
   reset(pluginName?: string, callback?: () => void) {
-    this._registry.reset(pluginName, callback)
+    this.registry.reset(pluginName, callback)
   }
 
   destroy(pluginName?: string, callback?: () => void) {
-    this._registry.destroy(pluginName, callback)
+    this.registry.destroy(pluginName, callback)
   }
 
   getPlugin<TPluginApi extends PluginApi>(
@@ -85,7 +132,7 @@ class App {
       typeof pluginFactory === 'string'
         ? pluginFactory
         : pluginFactory.pluginName
-    const plugin = this._registry.getPluginByName(pluginName, pluginKey)
+    const plugin = this.registry.getPluginByName(pluginName, pluginKey)
     if (!plugin) {
       throw new Error(
         `You can\'t call getPlugin for ${pluginName} with key: ${pluginKey} because it does not exist in your app`
@@ -102,7 +149,7 @@ class App {
       typeof pluginFactory === 'string'
         ? pluginFactory
         : pluginFactory.pluginName
-    const plugins = this._registry.getPluginsByName(pluginName, pluginKey)
+    const plugins = this.registry.getPluginsByName(pluginName, pluginKey)
     if (plugins.length === 0) {
       throw new Error(
         `You can\'t call getPlugins for ${pluginName} with key: ${pluginKey} because they don\'t exist in your app`
@@ -117,7 +164,7 @@ class App {
     listener: (eventData: TEvent) => void,
     pluginKey?: string
   ) {
-    const plugin = this._registry.getPluginByName(
+    const plugin = this.registry.getPluginByName(
       pluginFactory.pluginName!,
       pluginKey
     )
@@ -132,7 +179,7 @@ class App {
     EventCtor: new (eventData: TEvent) => TEvent,
     listener: (eventData: TEvent) => void
   ) {
-    const plugin = this._registry.getPluginByName(pluginFactory.pluginName!)
+    const plugin = this.registry.getPluginByName(pluginFactory.pluginName!)
 
     if (plugin) {
       plugin.removeListener(EventCtor, listener)
@@ -141,53 +188,46 @@ class App {
 
   run() {
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', this._start.bind(this))
+      document.addEventListener('DOMContentLoaded', this.start.bind(this))
     } else {
-      this._start()
+      this.start()
     }
   }
 
-  ready<TPluginApi extends PluginApi>(
-    pluginName: string,
-    callback: ReadyCallback<TPluginApi>
-  ): void {
-    this._appEventBus.subscribeToPluginReadyEvent(callback, pluginName)
+  private start() {
+    this.setup()
+    requestAnimationFrame(this.tick.bind(this))
   }
 
-  private _start() {
-    this._setup()
-    requestAnimationFrame(this._tick.bind(this))
+  private setup() {
+    this.listenToNativeEvents()
+    this.subscribeToEvents()
   }
 
-  private _setup() {
-    this._listenToNativeEvents()
-    this._subscribeToEvents()
-  }
-
-  private _listenToNativeEvents() {
+  private listenToNativeEvents() {
     document.addEventListener('click', (e) => {
-      this._eventBus.emitEvent(PointerClickEvent, {
+      this.eventBus.emitEvent(PointerClickEvent, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
       })
     })
     document.addEventListener('pointermove', (e) => {
-      this._eventBus.emitEvent(PointerMoveEvent, {
+      this.eventBus.emitEvent(PointerMoveEvent, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
       })
     })
     document.addEventListener('pointerdown', (e) => {
-      this._eventBus.emitEvent(PointerDownEvent, {
+      this.eventBus.emitEvent(PointerDownEvent, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
       })
     })
     document.addEventListener('pointerup', (e) => {
-      this._eventBus.emitEvent(PointerUpEvent, {
+      this.eventBus.emitEvent(PointerUpEvent, {
         x: e.clientX,
         y: e.clientY,
         target: e.target
@@ -195,77 +235,74 @@ class App {
     })
   }
 
-  private _tick(ts: number) {
-    let dt = (ts - this._previousTime) / 1000
+  private tick(ts: number) {
+    let dt = (ts - this.previousTime) / 1000
     if (dt > 0.016) {
       dt = 1 / 60
     }
-    this._previousTime = ts
+    this.previousTime = ts
 
-    this._eventBus.reset()
-    this._subscribeToEvents()
-    this._read()
-    this._update(ts, dt)
-    this._render()
+    this.eventBus.reset()
+    this.subscribeToEvents()
+    this.read()
+    this.update(ts, dt)
+    this.render()
 
-    requestAnimationFrame(this._tick.bind(this))
+    requestAnimationFrame(this.tick.bind(this))
   }
 
-  private _subscribeToEvents() {
-    this._eventBus.subscribeToEvent(
-      NodeAddedEvent,
-      this._onNodeAdded.bind(this)
-    )
+  private subscribeToEvents() {
+    this.eventBus.subscribeToEvent(NodeAddedEvent, this.onNodeAdded.bind(this))
 
-    this._eventBus.subscribeToEvent(
+    this.eventBus.subscribeToEvent(
       NodeRemovedEvent,
-      this._onNodeRemoved.bind(this)
+      this.onNodeRemoved.bind(this)
     )
 
-    this._eventBus.subscribeToEvent(
+    this.eventBus.subscribeToEvent(
       DataChangedEvent,
-      this._onDataChanged.bind(this)
+      this.onDataChanged.bind(this)
     )
 
-    this._registry.getPlugins().forEach((plugin) => {
-      plugin.subscribeToEvents(this._eventBus)
+    this.registry.getPlugins().forEach((plugin) => {
+      plugin.subscribeToEvents(this.eventBus)
     })
   }
 
-  private _onNodeAdded({ node }: NodeAddedEvent) {
-    this._registry.queueNodeToBeCreated(node)
+  private onNodeAdded({ node }: NodeAddedEvent) {
+    this.registry.queueNodeToBeCreated(node)
   }
 
-  private _onNodeRemoved({ node }: NodeRemovedEvent) {
-    this._registry.queueNodeToBeRemoved(node)
+  private onNodeRemoved({ node }: NodeRemovedEvent) {
+    this.registry.queueNodeToBeRemoved(node)
   }
 
-  private _onDataChanged(event: DataChangedEvent) {
-    this._registry.notifyPluginAboutDataChange(event)
+  private onDataChanged(event: DataChangedEvent) {
+    this.registry.notifyPluginAboutDataChange(event)
   }
 
-  private _read() {
-    this._registry.getViews().forEach((view) => {
+  private read() {
+    this.registry.getViews().forEach((view) => {
       view.read()
     })
   }
 
-  private _update(ts: number, dt: number) {
-    this._registry.update()
-    this._registry
+  private update(ts: number, dt: number) {
+    this.registry.update()
+    this.registry
       .getPlugins()
       .slice()
       .reverse()
       .forEach((plugin) => {
         plugin.init()
       })
-    this._registry.getRenderablePlugins().forEach((plugin) => {
+    this.registry.getRenderablePlugins().forEach((plugin) => {
       plugin.update(ts, dt)
     })
-    this._registry.getViews().forEach((view) => {
+    this.registry.getViews().forEach((view) => {
       view.update(ts, dt)
     })
-    this._registry.getViews().forEach((view) => {
+    this.registry.getViews().forEach((view) => {
       // Update previous rect after all views have been updated.
       // This is needed to ensure that we are using the same
       // previous rect across all view props.
@@ -273,16 +310,16 @@ class App {
     })
   }
 
-  private _render() {
-    this._registry.getRenderablePlugins().forEach((plugin) => {
+  private render() {
+    this.registry.getRenderablePlugins().forEach((plugin) => {
       plugin.render()
     })
-    this._registry.getViews().forEach((view) => {
+    this.registry.getViews().forEach((view) => {
       view.render()
     })
   }
 }
 
-export function createApp() {
+export function createApp(): VeloxiApp {
   return App.create()
 }
