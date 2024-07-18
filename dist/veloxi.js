@@ -1767,10 +1767,11 @@ class Vt {
     o(this, "_registry");
     o(this, "_layoutId");
     o(this, "_elementReader");
+    o(this, "_viewParents");
     o(this, "_temporaryView");
     o(this, "_inverseEffect");
     o(this, "_renderNextTick");
-    this.id = we(), this.name = t, this.element = e, this._elementReader = D(e), this._previousRect = this._elementReader.rect, this._viewProps = new yt(this), this._skipFirstRenderFrame = !0, this._layoutId = s, this._layoutTransition = !1, this._registry = i, this.element.dataset.velViewId = this.id, this._temporaryView = !1, this._inverseEffect = !1, this.styles = q(this.styles, () => {
+    this._registry = i, this.id = we(), this.name = t, this.element = e, this._elementReader = D(e), this._viewParents = this._getParents(), this._previousRect = this._elementReader.rect, this._viewProps = new yt(this), this._skipFirstRenderFrame = !0, this._layoutId = s, this._layoutTransition = !1, this.element.dataset.velViewId = this.id, this._temporaryView = !1, this._inverseEffect = !1, this.styles = q(this.styles, () => {
       this._renderNextTick = !0;
     }), this._renderNextTick = !1;
   }
@@ -1796,15 +1797,12 @@ class Vt {
     return Array.from(this.element.children).map((t) => t.dataset.velViewId).filter((t) => t && typeof t == "string").map((t) => this._registry.getViewById(t)).filter((t) => !!t);
   }
   get _parent() {
-    var i;
-    const e = this.element.parentElement;
-    if (!e)
-      return;
-    const t = e.closest("[data-vel-view-id]");
-    if ((i = t == null ? void 0 : t.dataset) != null && i.velViewId)
-      return this._registry.getViewById(t.dataset.velViewId);
+    return this._parents[0];
   }
   get _parents() {
+    return this._viewParents;
+  }
+  _getParents() {
     var i;
     const e = [];
     let t = this.element.parentElement;

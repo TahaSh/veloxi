@@ -126,6 +126,7 @@ declare class CoreView implements View {
     private _registry;
     private _layoutId;
     private _elementReader;
+    private _viewParents;
     private _temporaryView;
     private _inverseEffect;
     private _renderNextTick;
@@ -139,6 +140,7 @@ declare class CoreView implements View {
     get _children(): CoreView[];
     get _parent(): CoreView | undefined;
     get _parents(): CoreView[];
+    private _getParents;
     get rotation(): ViewRotation;
     get size(): ViewSize;
     get _localWidth(): number;
