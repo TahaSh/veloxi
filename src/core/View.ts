@@ -81,6 +81,8 @@ export class CoreView implements View {
   private _layoutId: LayoutId | undefined
   private _elementReader: ElementReader
 
+  private _viewParents: CoreView[]
+
   private _temporaryView: boolean
   private _inverseEffect: boolean
   private _renderNextTick: boolean
@@ -91,16 +93,17 @@ export class CoreView implements View {
     registry: Registry,
     layoutId?: string
   ) {
+    this._registry = registry
     this.id = getUniqueId()
     this.name = name
     this.element = element
     this._elementReader = readElement(element)
+    this._viewParents = this._getParents()
     this._previousRect = this._elementReader.rect
     this._viewProps = new ViewPropCollection(this)
     this._skipFirstRenderFrame = true
     this._layoutId = layoutId
     this._layoutTransition = false
-    this._registry = registry
     this.element.dataset.velViewId = this.id
     this._temporaryView = false
     this._inverseEffect = false
@@ -149,14 +152,14 @@ export class CoreView implements View {
   }
 
   get _parent(): CoreView | undefined {
-    const parent = this.element.parentElement as HTMLElement
-    if (!parent) return undefined
-    const closestParent = parent.closest('[data-vel-view-id]') as HTMLElement
-    if (!closestParent?.dataset?.velViewId) return undefined
-    return this._registry.getViewById(closestParent.dataset.velViewId)
+    return this._parents[0]
   }
 
   get _parents(): CoreView[] {
+    return this._viewParents
+  }
+
+  private _getParents(): CoreView[] {
     const parents: CoreView[] = []
     let parent = this.element.parentElement as HTMLElement
     if (!parent) return parents
