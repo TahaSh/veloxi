@@ -128,11 +128,19 @@ declare class CoreView implements View {
     private _elementReader;
     private _viewParents;
     private _temporaryView;
-    private _inverseEffect;
+    private _inverseEffect?;
     private _renderNextTick;
+    private _layoutOption;
+    private _elementObserver;
+    private _hasReadElement;
+    private _shouldReadRect;
+    private _readWithScroll;
+    private _externalUserStyles;
     constructor(element: HTMLElement, name: string, registry: Registry, layoutId?: string);
     destroy(): void;
     get elementReader(): ElementReader;
+    get layoutOption(): LayoutOption;
+    _getLayoutOption(): LayoutOption;
     setElement(element: HTMLElement): void;
     get layoutId(): string | undefined;
     get position(): ViewPosition;
@@ -165,6 +173,7 @@ declare class CoreView implements View {
     overlapsWith(view: View): boolean;
     distanceTo(view: View): number;
     read(): void;
+    setHasReadElement(value: boolean): void;
     get rect(): ViewRect;
     get previousRect(): ViewRect;
     update(ts: number, dt: number): void;
@@ -172,7 +181,9 @@ declare class CoreView implements View {
     setAsTemporaryView(): void;
     get isTemporaryView(): boolean;
     get shouldRender(): boolean;
+    _cleanCssText(cssText: string): string;
     render(): void;
+    private _getExternalUserStyles;
     private _getUserStyles;
     markAsAdded(): void;
     onAdd(callback: OnAddCallback): void;
@@ -230,6 +241,7 @@ declare class DragEvent_2 {
         height: number;
         distance: number;
         isDragging: boolean;
+        stopped: boolean;
         target: EventTarget | null;
         directions: Array<Direction>;
     };
@@ -246,6 +258,7 @@ declare class DragEvent_2 {
     width: number;
     height: number;
     distance: number;
+    stopped: boolean;
     constructor(props: {
         view: View;
         previousX: number;
@@ -258,6 +271,7 @@ declare class DragEvent_2 {
         height: number;
         distance: number;
         isDragging: boolean;
+        stopped: boolean;
         target: EventTarget | null;
         directions: Array<Direction>;
     });
@@ -273,11 +287,12 @@ export declare class DragEventPlugin extends EventPlugin {
     private _pointerDownPerView;
     private _targetPerView;
     private _viewPointerPositionLog;
+    private _stopTimer;
     setup(): void;
     onSelect(e: Event): void;
     get _isDragging(): boolean;
     subscribeToEvents(eventBus: EventBus): void;
-    _emitEvent(view: View, directions: Array<Direction>): void;
+    _emitEvent(view: View, directions: Array<Direction>, stopped?: boolean): void;
     private _calculateDirections;
 }
 
@@ -301,16 +316,17 @@ declare class ElementReader {
     private _element;
     private _rect;
     private _computedStyle;
-    constructor(element: HTMLElement);
-    read<K extends keyof ViewPropNameToElementPropValue>(propName: K): ViewPropNameToElementPropValue[K] | undefined;
+    private _pageRectReader;
+    private _scroll;
+    constructor(view: CoreView);
+    invalidatePageRect(): void;
+    update(includeScroll?: boolean): void;
     get rect(): ViewRect;
     get opacity(): ElementPropValue<number>;
     get borderRadius(): ElementPropValue<BorderRadiusValue>;
     get origin(): ElementPropValue<Vec2>;
-    get scroll(): {
-        y: number;
-        x: number;
-    };
+    _calculateScroll(): Point;
+    get scroll(): Point;
 }
 
 export declare class EventBus {
@@ -409,6 +425,8 @@ declare interface IViewProp {
     shouldRender: boolean;
 }
 
+declare type LayoutOption = 'position' | 'size' | 'all';
+
 declare function minBy<T>(items: Array<T>, predicate: (item: T) => number): T;
 
 declare interface OnAddCallback {
@@ -443,6 +461,11 @@ declare class OriginProp extends ViewProp<Vec2> implements ViewOrigin {
     get renderValue(): Vec2;
     projectStyles(): string;
     isTransform(): boolean;
+}
+
+declare interface PageRect {
+    left: number;
+    top: number;
 }
 
 declare class Plugin_2<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi> extends IPlugin<TConfig, TPluginApi> {
@@ -576,6 +599,7 @@ declare class Registry {
     private _getPluginNameForElement;
     private _getPluginIdForElement;
     private _isScopedElement;
+    private _removeElementsWithParent;
     private _handleAddedViews;
     private _getLayoutIdForElement;
     private _createNewView;
@@ -604,6 +628,7 @@ declare class Registry {
     updatePlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(pluginFactory: PluginFactory<TConfig, TPluginApi>, eventBus: EventBus, config?: TConfig): IPlugin<TConfig, TPluginApi>;
     getViews(): ReadonlyArray<CoreView>;
     createView(domEl: HTMLElement, name: string, layoutId?: string): CoreView;
+    private _isElementIgnored;
     assignViewToPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(view: View, plugin: IPlugin<TConfig, TPluginApi>): void;
     getViewsForPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(plugin: IPlugin<TConfig, TPluginApi>): Array<CoreView>;
     getViewsByNameForPlugin<TConfig extends PluginConfig = PluginConfig, TPluginApi extends PluginApi = PluginApi>(plugin: IPlugin<TConfig, TPluginApi>, viewName: string): Array<CoreView>;
@@ -873,10 +898,6 @@ declare class ViewPropCollection {
 
 declare type ViewPropName = 'position' | 'scale' | 'rotation' | 'size' | 'origin' | 'opacity' | 'borderRadius';
 
-declare type ViewPropNameToElementPropValue = {
-    [K in ViewPropName]: K extends 'opacity' ? ElementPropValue<number> : K extends 'borderRadius' ? ElementPropValue<BorderRadiusValue> : never;
-};
-
 declare interface ViewRect {
     viewportOffset: {
         left: number;
@@ -884,10 +905,7 @@ declare interface ViewRect {
         right: number;
         bottom: number;
     };
-    pageOffset: {
-        left: number;
-        top: number;
-    };
+    pageOffset: PageRect;
     size: RectSize;
 }
 
