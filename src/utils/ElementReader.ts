@@ -1,37 +1,44 @@
+import { CoreView } from '../core/View'
 import {
   BorderRadiusValue,
   createBorderRadiusValue
 } from '../element-props/BorderRadiusValue'
-import {
-  ElementPropValue,
-  ViewPropNameToElementPropValue
-} from '../element-props/ElementPropValue'
+import { ElementPropValue } from '../element-props/ElementPropValue'
 import { createOpacityValue } from '../element-props/OpacityValue'
 import { createOriginValue } from '../element-props/OriginValue'
 import { Vec2 } from '../math'
+import { Point } from '../view-props/types'
+import {
+  createPageOffsetRectReader,
+  PageOffsetRectReader
+} from './PageOffsetRectReader'
 import { ViewRect, readRect } from './RectReader'
 
 export class ElementReader {
   private _element: HTMLElement
   private _rect: ViewRect
   private _computedStyle: CSSStyleDeclaration
+  private _pageRectReader: PageOffsetRectReader
+  private _scroll: Point
 
-  constructor(element: HTMLElement) {
-    this._rect = readRect(element)
-    this._computedStyle = getComputedStyle(element)
-    this._element = element
+  constructor(view: CoreView) {
+    this._element = view.element
+    this._pageRectReader = createPageOffsetRectReader(view)
+    this._rect = readRect(this._element, this._pageRectReader)
+    this._computedStyle = getComputedStyle(this._element)
+    this._scroll = this._calculateScroll()
   }
 
-  read<K extends keyof ViewPropNameToElementPropValue>(
-    propName: K
-  ): ViewPropNameToElementPropValue[K] | undefined {
-    switch (propName) {
-      case 'opacity':
-        return this.opacity as ViewPropNameToElementPropValue[K]
-      case 'borderRadius':
-        return this.borderRadius as ViewPropNameToElementPropValue[K]
+  invalidatePageRect() {
+    this._pageRectReader.invalidate()
+  }
+
+  update(includeScroll = false) {
+    this._rect = readRect(this._element, this._pageRectReader)
+    this._computedStyle = getComputedStyle(this._element)
+    if (includeScroll) {
+      this._scroll = this._calculateScroll()
     }
-    return undefined
   }
 
   get rect(): ViewRect {
@@ -53,7 +60,7 @@ export class ElementReader {
     )
   }
 
-  get scroll() {
+  _calculateScroll(): Point {
     let current = this._element
     let y = 0
     let x = 0
@@ -70,8 +77,11 @@ export class ElementReader {
 
     return { y, x }
   }
+  get scroll(): Point {
+    return this._scroll
+  }
 }
 
-export function readElement(element: HTMLElement) {
-  return new ElementReader(element)
+export function readElement(view: CoreView) {
+  return new ElementReader(view)
 }

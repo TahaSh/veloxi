@@ -26,6 +26,11 @@ const DocumentDargPlugin: PluginFactory = (context) => {
   let actionDoneTimer: number
 
   context.setup(() => {
+    const documentsContainer = context.getView('documents-container')!
+    documentsContainer.position.setAnimator('dynamic')
+    documentsContainer.scale.setAnimator('dynamic')
+    documentsContainer.layoutTransition(true)
+
     documents = context.getViews('document')
     actionsContainer = context.getView('actions-container')!
     archiveAction = context.getView('archive-action')!
@@ -41,20 +46,25 @@ const DocumentDargPlugin: PluginFactory = (context) => {
         onDocumentDrag(event)
       }
     })
+
+    const documentContainers = context.getViews('document-container')
+    documentContainers.forEach((doc) => {
+      setupDocumentContainer(doc)
+    })
   })
 
+  function setupDocumentContainer(view: View) {
+    view.position.setAnimator('spring', { stiffness: 0.3 })
+    view.opacity.setAnimator('tween')
+    view.onRemove((v, done) => {
+      v.styles.zIndex = '-1'
+      v.opacity.set(0)
+      v.opacity.animator.onComplete(done)
+    })
+  }
+
   context.onViewAdded((view) => {
-    if (view.name === 'document-container') {
-      view.position.setAnimator('spring', { stiffness: 0.3 })
-      view.opacity.setAnimator('tween')
-      view.layoutTransition(true)
-      view.inverseEffect(false)
-      view.onRemove((v, done) => {
-        v.styles.zIndex = '-1'
-        v.opacity.set(0)
-        v.opacity.animator.onComplete(done)
-      })
-    } else if (
+    if (
       ['drop-action-text-archived', 'drop-action-text-deleted'].includes(
         view.name
       )
@@ -85,6 +95,8 @@ const DocumentDargPlugin: PluginFactory = (context) => {
       document.position.setAnimator('dynamic')
       document.scale.setAnimator('dynamic')
       document.rotation.setAnimator('dynamic')
+
+      document.layoutTransition(false)
       document.onRemove((view, done) => {
         view.position.setAnimator('dynamic', { speed: 8 })
         view.scale.setAnimator('dynamic', { speed: 8 })

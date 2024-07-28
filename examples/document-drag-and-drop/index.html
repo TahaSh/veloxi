@@ -6,13 +6,16 @@
     <title>Document drag-and-drop</title>
   </head>
   <body>
-    <div class="documents-container">
+    <div
+      class="documents-container"
+      data-vel-plugin="DocumentDragPlugin"
+      data-vel-view="documents-container"
+    >
       <div
         class="document-placeholder"
-        data-vel-view="document-container"
-        data-vel-plugin="DocumentDragPlugin"
+        data-vel-view="document-placeholder-container"
       >
-        Create new doc
+        <div>Create new doc</div>
       </div>
       <div
         class="document"

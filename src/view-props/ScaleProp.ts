@@ -57,6 +57,9 @@ export class ScaleProp extends ViewProp<Vec2> implements ViewScale {
   }
 
   update(ts: number, dt: number): void {
+    if (this._view.layoutOption === 'position') {
+      return
+    }
     if (
       (this._view.isInverseEffectEnabled ||
         this._view.isLayoutTransitionEnabled) &&

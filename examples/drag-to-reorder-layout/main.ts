@@ -3,6 +3,10 @@ import './style.css'
 import { PluginFactory, View, createApp } from '../../src'
 import { DragEvent, DragEventPlugin } from '../../src'
 
+function arrayEqual(a: Array<any>, b: Array<any>): boolean {
+  return a.every((val, i) => val === b[i])
+}
+
 export class ReorderEvent {
   itemIdsJson: string
   constructor(event: { itemIdsJson: string }) {
@@ -44,7 +48,7 @@ export const DragToReorderPlugin: PluginFactory = (context) => {
       .getViews('item')
       .filter((v: View) => v.id !== dragging.id)
     if (event.isDragging) {
-      const localCurrentOrder = currentOrder()
+      const localCurrentOrder = [...currentOrder()]
       dragging.position.set({ x: event.x, y: event.y }, false)
       dragging.styles.zIndex = '2'
       const draggingIndex = localCurrentOrder.indexOf(dragging.data.itemId)
@@ -65,7 +69,10 @@ export const DragToReorderPlugin: PluginFactory = (context) => {
         }
       })
       localCurrentOrder.splice(newIndex, 0, dragging.data.itemId)
-      updateOrderedIds(localCurrentOrder)
+
+      if (!arrayEqual(currentOrder(), localCurrentOrder)) {
+        updateOrderedIds(localCurrentOrder)
+      }
     } else {
       dragging.position.reset()
       dragging.styles.zIndex = '1'

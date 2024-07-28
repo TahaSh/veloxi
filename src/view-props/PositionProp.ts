@@ -294,11 +294,14 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
         rect.viewportOffset.left -
         parentDx +
         prevMarginOffsetX
-      const dy =
+      let dy =
         prevRect.viewportOffset.top -
         rect.viewportOffset.top -
         parentDy +
         prevMarginOffsetY
+
+      dx = Number.isFinite(dx) ? dx : 0
+      dy = Number.isFinite(dy) ? dy : 0
 
       this._setTarget(new Vec2(dx, dy), false)
     } else if (this._animateLayoutUpdateNextFrame) {
@@ -354,7 +357,7 @@ export class PositionProp extends ViewProp<Vec2> implements ViewPosition {
 
   projectStyles(): string {
     const renderValue = this.renderValue
-    const styles = `translate3d(${renderValue.x}px, ${renderValue.y}px, 0)`
+    const styles = `translate3d(${renderValue.x}px, ${renderValue.y}px, 0px)`
     this._previousRenderValue = renderValue
     return styles
   }

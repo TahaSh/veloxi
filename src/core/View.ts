@@ -1,4 +1,8 @@
 import { Vec2 } from '../math'
+import {
+  createElementLayoutObserver,
+  ElementLayoutObserver
+} from '../utils/ElementLayoutObserver'
 import { ElementReader, readElement } from '../utils/ElementReader'
 import { createProxy } from '../utils/ObjectProxy'
 import { ViewRect } from '../utils/RectReader'
@@ -48,6 +52,8 @@ export interface View {
 
 type ViewDataProp = Record<string, string>
 
+type LayoutOption = 'position' | 'size' | 'all'
+
 interface OnAddCallback {
   afterRemoved?: boolean
   onInitialLoad?: boolean
@@ -84,8 +90,17 @@ export class CoreView implements View {
   private _viewParents: CoreView[]
 
   private _temporaryView: boolean
-  private _inverseEffect: boolean
+  private _inverseEffect?: boolean
   private _renderNextTick: boolean
+
+  private _layoutOption: LayoutOption
+
+  private _elementObserver: ElementLayoutObserver
+  private _hasReadElement: boolean
+  private _shouldReadRect: boolean
+  private _readWithScroll: boolean
+
+  private _externalUserStyles: string
 
   constructor(
     element: HTMLElement,
@@ -97,20 +112,37 @@ export class CoreView implements View {
     this.id = getUniqueId()
     this.name = name
     this.element = element
-    this._elementReader = readElement(element)
+    this.element.dataset.velViewId = this.id
+    this._elementReader = readElement(this)
     this._viewParents = this._getParents()
     this._previousRect = this._elementReader.rect
     this._viewProps = new ViewPropCollection(this)
     this._skipFirstRenderFrame = true
     this._layoutId = layoutId
     this._layoutTransition = false
-    this.element.dataset.velViewId = this.id
     this._temporaryView = false
-    this._inverseEffect = false
     this.styles = createProxy(this.styles, () => {
       this._renderNextTick = true
     })
+    this._externalUserStyles = this._getExternalUserStyles()
     this._renderNextTick = false
+
+    this._layoutOption = this._getLayoutOption()
+
+    this._hasReadElement = false
+
+    this._shouldReadRect = false
+    this._readWithScroll = false
+    this._elementObserver = createElementLayoutObserver(element)
+    this._elementObserver.onChange((includeScroll) => {
+      if (this._hasReadElement) {
+        this._shouldReadRect = false
+        return
+      }
+      this._externalUserStyles = this._getExternalUserStyles()
+      this._shouldReadRect = true
+      this._readWithScroll = includeScroll
+    })
   }
 
   destroy() {
@@ -124,10 +156,27 @@ export class CoreView implements View {
     return this._elementReader
   }
 
+  get layoutOption(): LayoutOption {
+    return this._layoutOption
+  }
+
+  _getLayoutOption(): LayoutOption {
+    const isPosition = !!this.element.closest('[data-vel-layout-position]')
+    if (isPosition) {
+      return 'position'
+    }
+    const isSize = this.element.closest('[data-vel-layout-size]')
+    if (isSize) {
+      return 'size'
+    }
+    return 'all'
+  }
+
   setElement(element: HTMLElement) {
     this.element = element
-    this._elementReader = readElement(this.element)
+    this._elementReader = readElement(this)
     this.element.dataset.velViewId = this.id
+    this._elementObserver.setElement(element)
   }
 
   get layoutId() {
@@ -143,7 +192,8 @@ export class CoreView implements View {
   }
 
   get _children(): CoreView[] {
-    const childViewIds = Array.from(this.element.children)
+    const children = this.element.querySelectorAll('*')
+    const childViewIds = Array.from(children)
       .map((child) => (child as HTMLElement).dataset.velViewId!)
       .filter((id) => id && typeof id === 'string')
     return childViewIds
@@ -240,7 +290,15 @@ export class CoreView implements View {
   }
 
   get isInverseEffectEnabled(): boolean {
-    return this._parents.some((parent) => parent._inverseEffect)
+    let result = false
+    for (let index = 0; index < this._parents.length; index++) {
+      const parent = this._parents[index]
+      if (typeof parent._inverseEffect !== 'undefined') {
+        result = parent._inverseEffect
+        break
+      }
+    }
+    return result
   }
 
   layoutTransition(enabled: boolean): void {
@@ -306,15 +364,16 @@ export class CoreView implements View {
   }
 
   intersects(x: number, y: number): boolean {
+    const rect = this.element.getBoundingClientRect()
     const position = {
-      x: this.rect.viewportOffset.left,
-      y: this.rect.viewportOffset.top
+      x: rect.left,
+      y: rect.top
     }
     return (
       x >= position.x &&
-      x <= position.x + this.size.width &&
+      x <= position.x + rect.width &&
       y >= position.y &&
-      y <= position.y + this.size.height
+      y <= position.y + rect.height
     )
   }
 
@@ -340,7 +399,20 @@ export class CoreView implements View {
   }
 
   read() {
-    this._elementReader = readElement(this.element)
+    if (this._shouldReadRect) {
+      this._elementReader.update(this._readWithScroll)
+      this._children.forEach((child) => {
+        child.setHasReadElement(true)
+        child.elementReader.update(this._readWithScroll)
+      })
+      this._shouldReadRect = false
+      this._readWithScroll = false
+    }
+    this.setHasReadElement(false)
+  }
+
+  setHasReadElement(value: boolean) {
+    this._hasReadElement = value
   }
 
   get rect() {
@@ -374,6 +446,27 @@ export class CoreView implements View {
     )
   }
 
+  _cleanCssText(cssText: string): string {
+    const cleanedProperties = new Map()
+    const regex = /([-\w]+)\s*:\s*([^;]+)\s*;?/g
+    let match
+
+    while ((match = regex.exec(cssText)) !== null) {
+      const [_, name, value] = match
+      if (!value.trim()) continue // Skip if value is empty
+
+      const unprefixedName = name.replace(/^-\w+-/, '')
+      if (!cleanedProperties.has(unprefixedName) || !name.startsWith('-')) {
+        cleanedProperties.set(
+          unprefixedName,
+          `${unprefixedName}: ${value.trim()}`
+        )
+      }
+    }
+
+    return Array.from(cleanedProperties.values()).join('; ')
+  }
+
   render() {
     if (!this.shouldRender) {
       return
@@ -397,6 +490,9 @@ export class CoreView implements View {
     if (transformProps.some((prop) => prop.hasChanged())) {
       const transformStyle = transformProps.reduce((result, prop, index) => {
         result += prop.projectStyles()
+        if (index < transformProps.length - 1) {
+          result += ' '
+        }
         if (index === transformProps.length - 1) {
           result += ';'
         }
@@ -414,21 +510,67 @@ export class CoreView implements View {
 
     styles += this._getUserStyles()
 
-    this.element.style.cssText = styles
+    if (
+      this._cleanCssText(this.element.style.cssText) !==
+      this._cleanCssText(styles)
+    ) {
+      this.element.style.cssText = styles
+    }
 
     this._renderNextTick = false
+  }
+
+  private _getExternalUserStyles(): string {
+    const cssText = this.element.style.cssText
+    const styles = this.styles
+    if (cssText.length === 0) {
+      return ''
+    }
+
+    const stylesToExclude = [
+      'transform',
+      'transform-origin',
+      'opacity',
+      'width',
+      'height',
+      'border-radius'
+    ]
+
+    const stylesKebab: any = {}
+    for (const key in styles) {
+      if (styles.hasOwnProperty(key)) {
+        stylesKebab[toKebabCase(key)] = styles[key]
+      }
+    }
+
+    const declarations = cssText
+      .split(';')
+      .map((declaration) => declaration.trim())
+      .filter(Boolean)
+
+    const filteredDeclarations = declarations.filter((declaration) => {
+      const colonIndex = declaration.indexOf(':')
+      if (colonIndex === -1) return false
+      const key = declaration.slice(0, colonIndex).trim()
+      return !stylesKebab.hasOwnProperty(key) && !stylesToExclude.includes(key)
+    })
+
+    const styleString = filteredDeclarations.join('; ')
+
+    return styleString
   }
 
   private _getUserStyles(): string {
     return Object.keys(this.styles).reduce((result, styleProp) => {
       if (!styleProp) return result
+      const propName = toKebabCase(styleProp)
+        .replace('webkit', '-webkit')
+        .replace('moz', '-moz')
       return (
         result +
-        `${toKebabCase(styleProp)}: ${
-          this.styles[styleProp as keyof CSSStyleDeclaration]
-        };`
+        `${propName}: ${this.styles[styleProp as keyof CSSStyleDeclaration]}; `
       )
-    }, '')
+    }, this._externalUserStyles)
   }
 
   markAsAdded() {
@@ -463,7 +605,8 @@ export class CoreView implements View {
   }
 
   public getChildren(viewName: string): View[] {
-    const viewIds = Array.from(this.element.children)
+    const children = this.element.querySelectorAll('*')
+    const viewIds = Array.from(children)
       .filter((child) => {
         const childEl = child as HTMLElement
         return (
@@ -480,11 +623,12 @@ export class CoreView implements View {
   }
 
   public getParent(viewName: string): View | undefined {
-    const parentElement = this.element.parentElement
+    const parentElement = this.element.closest(
+      `[data-vel-view="${viewName}"]`
+    ) as HTMLElement
     if (!parentElement) return
     const viewId = parentElement.dataset.velViewId
     if (!viewId) return
-    if (parentElement.dataset.velView !== viewName) return
     return this._registry.getViewById(viewId)
   }
 }

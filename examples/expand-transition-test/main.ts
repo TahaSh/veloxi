@@ -5,8 +5,8 @@ import { PluginFactory, createApp } from '../../src'
 const ExpandTransitionPlugin: PluginFactory = (context) => {
   context.onViewAdded((view) => {
     view.layoutTransition(true)
-    view.position.setAnimator('spring')
-    view.scale.setAnimator('spring')
+    view.position.setAnimator('dynamic', { speed: 5 })
+    view.scale.setAnimator('dynamic', { speed: 5 })
   })
 }
 

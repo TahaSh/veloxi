@@ -71,6 +71,13 @@ export class DomObserver {
       })
 
       const attributeName = mutation.attributeName
+
+      if (attributeName === 'data-vel-view') {
+        this._eventBus.emitEvent(NodeAddedEvent, {
+          node: mutation.target as HTMLElement
+        })
+      }
+
       const dataRegex = /data-vel-data-.+/gi
       if (attributeName && dataRegex.test(attributeName)) {
         const node = mutation.target as HTMLElement

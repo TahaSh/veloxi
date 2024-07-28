@@ -20,6 +20,7 @@ export class DragEvent {
   width: number
   height: number
   distance: number
+  stopped: boolean
   constructor(
     public props: {
       view: View
@@ -33,6 +34,7 @@ export class DragEvent {
       height: number
       distance: number
       isDragging: boolean
+      stopped: boolean
       target: EventTarget | null
       directions: Array<Direction>
     }
@@ -48,6 +50,7 @@ export class DragEvent {
     this.distance = props.distance
     this.view = props.view
     this.isDragging = props.isDragging
+    this.stopped = props.stopped
     this.target = props.target
     this.directions = props.directions
   }
@@ -63,6 +66,7 @@ export class DragEventPlugin extends EventPlugin {
   private _pointerDownPerView: Map<string, boolean> = new Map()
   private _targetPerView: Map<string, EventTarget | null> = new Map()
   private _viewPointerPositionLog: Map<string, Array<Vec2>> = new Map()
+  private _stopTimer = 0
 
   setup() {
     document.addEventListener('selectstart', this.onSelect.bind(this))
@@ -133,12 +137,21 @@ export class DragEventPlugin extends EventPlugin {
             currentPointer
           )
           this._emitEvent(view, directions)
+
+          clearTimeout(this._stopTimer)
+          this._stopTimer = setTimeout(() => {
+            this._emitEvent(view, directions, true)
+          }, 120)
         }
       })
     })
   }
 
-  _emitEvent(view: View, directions: Array<Direction>) {
+  _emitEvent(
+    view: View,
+    directions: Array<Direction>,
+    stopped: boolean = false
+  ) {
     const logs = this._viewPointerPositionLog.get(view.id)
     const previousPointer =
       logs && logs.length >= 2 ? logs[logs.length - 2] : null
@@ -183,7 +196,8 @@ export class DragEventPlugin extends EventPlugin {
       width,
       height,
       isDragging,
-      directions
+      directions,
+      stopped
     }
     this.emit(DragEvent, eventData)
   }

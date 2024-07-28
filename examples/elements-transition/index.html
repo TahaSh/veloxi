@@ -9,7 +9,6 @@
     <template id="list-a">
       <div
         class="element element-a"
-        data-vel-plugin="ElementsTransitionPlugin"
         data-vel-view="item"
         data-vel-layout-id="list-a"
       >
@@ -17,7 +16,6 @@
       </div>
       <div
         class="element element-b"
-        data-vel-plugin="ElementsTransitionPlugin"
         data-vel-view="item"
         data-vel-layout-id="list-a"
       >
@@ -25,7 +23,6 @@
       </div>
       <div
         class="element element-c"
-        data-vel-plugin="ElementsTransitionPlugin"
         data-vel-view="item"
         data-vel-layout-id="list-a"
       >
@@ -35,7 +32,6 @@
     <template id="list-b">
       <div
         class="element element-a"
-        data-vel-plugin="ElementsTransitionPlugin"
         data-vel-view="item"
         data-vel-layout-id="list-b"
       >
@@ -43,7 +39,6 @@
       </div>
       <div
         class="element element-b"
-        data-vel-plugin="ElementsTransitionPlugin"
         data-vel-view="item"
         data-vel-layout-id="list-b"
       >
@@ -51,15 +46,24 @@
       </div>
       <div
         class="element element-c"
-        data-vel-plugin="ElementsTransitionPlugin"
         data-vel-view="item"
         data-vel-layout-id="list-b"
       >
         F
       </div>
     </template>
-    <div id="container-a" class="container"></div>
-    <div id="container-b" class="container"></div>
+    <div
+      id="container-a"
+      class="container"
+      data-vel-plugin="ElementsTransitionPlugin"
+      data-vel-view="container"
+    ></div>
+    <div
+      id="container-b"
+      class="container"
+      data-vel-plugin="ElementsTransitionPlugin"
+      data-vel-view="container"
+    ></div>
     <script type="module" src="./main.ts"></script>
     <script>
       function initList(listId, containerId) {

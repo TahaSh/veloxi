@@ -99,18 +99,38 @@ export class Registry {
     return isViewScoped
   }
 
+  private _removeElementsWithParent(
+    els: Array<HTMLElement>
+  ): Array<HTMLElement> {
+    const elementSet = new Set(els)
+
+    return els.filter((el) => {
+      let parent = el.parentElement
+      while (parent) {
+        if (elementSet.has(parent)) {
+          return false
+        }
+        parent = parent.parentElement
+      }
+      return true
+    })
+  }
+
   private _handleAddedViews() {
     this._viewsCreatedInPreviousFrame.forEach((view) => {
       view.markAsAdded()
     })
     this._viewsCreatedInPreviousFrame = []
 
-    // Create plugin for views in scoped plugins
-    const scopedViews = this._viewsToBeCreated.filter((domEl) =>
-      this._isScopedElement(domEl)
+    const viewsToBeCreated = this._removeElementsWithParent(
+      this._viewsToBeCreated
     )
-    const restViews = this._viewsToBeCreated.filter(
-      (domEl) => !this._isScopedElement(domEl)
+    // Create plugin for views in scoped plugins
+    const scopedViews = viewsToBeCreated.filter(
+      (domEl) => this._isScopedElement(domEl) && !this._isElementIgnored(domEl)
+    )
+    const restViews = viewsToBeCreated.filter(
+      (domEl) => !this._isScopedElement(domEl) && !this._isElementIgnored(domEl)
     )
     this._viewsToBeCreated = []
     scopedViews.forEach((domEl) => {
@@ -228,22 +248,24 @@ export class Registry {
       )
       return
     }
-    Array.from(allNestedChildren).forEach((child) => {
-      const childEl = child as HTMLElement
-      const viewName = childEl.dataset.velView
-        ? childEl.dataset.velView
-        : `${view.name}-child`
+    Array.from(allNestedChildren)
+      .filter((child) => !this._isElementIgnored(child as HTMLElement))
+      .forEach((child) => {
+        const childEl = child as HTMLElement
+        const viewName = childEl.dataset.velView
+          ? childEl.dataset.velView
+          : `${view.name}-child`
 
-      const layoutId = this._getLayoutIdForElement(childEl, plugin)
-      const childView = this.createView(childEl, viewName, layoutId)
+        const layoutId = this._getLayoutIdForElement(childEl, plugin)
+        const childView = this.createView(childEl, viewName, layoutId)
 
-      if (layoutId && !this._layoutIdToViewMap.has(layoutId)) {
-        this._layoutIdToViewMap.set(layoutId, childView)
-      }
+        if (layoutId && !this._layoutIdToViewMap.has(layoutId)) {
+          this._layoutIdToViewMap.set(layoutId, childView)
+        }
 
-      plugin.addView(childView)
-      plugin.notifyAboutViewAdded(childView)
-    })
+        plugin.addView(childView)
+        plugin.notifyAboutViewAdded(childView)
+      })
   }
 
   private _handleRemoveView(viewId: ViewId): void {
@@ -530,6 +552,9 @@ export class Registry {
       )
       domEls = [...domEls, ...childEls]
       const topLevelDomEls = domEls.filter((domEl) => {
+        if (this._isElementIgnored(domEl)) {
+          return false
+        }
         const parentElement = domEl.parentElement
         if (!parentElement) {
           return true
@@ -590,6 +615,10 @@ export class Registry {
     this._views.push(view)
     this._viewsCreatedInPreviousFrame.push(view)
     return view
+  }
+
+  private _isElementIgnored(el: HTMLElement) {
+    return el.closest('[data-vel-ignore]')
   }
 
   assignViewToPlugin<

@@ -3,6 +3,12 @@ import './style.css'
 import { PluginFactory, createApp, View } from '../../src'
 
 const AddRemovePlugin: PluginFactory = (context) => {
+  context.setup(() => {
+    const root = context.getView('root')!
+    root.position.setAnimator('spring')
+    root.scale.setAnimator('spring')
+    root.layoutTransition(true)
+  })
   context.onViewAdded((view) => {
     if (view.name === 'card') {
       configureCard(view)
@@ -12,7 +18,6 @@ const AddRemovePlugin: PluginFactory = (context) => {
   function configureCard(card: View) {
     card.position.setAnimator('spring')
     card.opacity.setAnimator('tween')
-    card.layoutTransition(true)
 
     if (context.initialized) {
       card.onAdd({

@@ -1,6 +1,13 @@
+import { PageOffsetRectReader } from './PageOffsetRectReader'
+
 export interface RectSize {
   width: number
   height: number
+}
+
+export interface PageRect {
+  left: number
+  top: number
 }
 
 export interface ViewRect {
@@ -10,16 +17,17 @@ export interface ViewRect {
     right: number
     bottom: number
   }
-  pageOffset: {
-    left: number
-    top: number
-  }
+  pageOffset: PageRect
   size: RectSize
 }
 
-export function readRect(element: HTMLElement): ViewRect {
+export function readRect(
+  element: HTMLElement,
+  pageRectReader: PageOffsetRectReader
+): ViewRect {
   const viewportRect = getViewportRect(element)
-  const pageRect = getPageRect(element)
+  const layoutWidth = element.offsetWidth
+  const layoutHeight = element.offsetHeight
 
   return {
     viewportOffset: {
@@ -29,14 +37,14 @@ export function readRect(element: HTMLElement): ViewRect {
       bottom: Math.round(viewportRect.bottom)
     },
 
-    pageOffset: {
-      top: pageRect.top,
-      left: pageRect.left
-    },
+    pageOffset: pageRectReader.read({
+      width: layoutWidth,
+      height: layoutHeight
+    }),
 
     size: {
-      width: element.offsetWidth,
-      height: element.offsetHeight
+      width: layoutWidth,
+      height: layoutHeight
     }
   }
 }
@@ -53,7 +61,7 @@ function getViewportRect(element: HTMLElement) {
   }
 }
 
-function getPageRect(element: HTMLElement) {
+export function getPageRect(element: HTMLElement): PageRect {
   let current = element
   let top = 0
   let left = 0
