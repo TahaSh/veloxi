@@ -2737,8 +2737,8 @@ class At extends j {
       this._initialPointer = new h(i, s), this.getViews().forEach((r) => {
         this._pointerDownPerView.set(r.id, r.intersects(i, s)), this._targetPerView.set(r.id, n);
         const l = new h(
-          i - r.position.x,
-          s - r.position.y
+          i - r.position.initialX,
+          s - r.position.initialY
         );
         this._pointerX = i, this._pointerY = s, this._initialPointerPerView.set(r.id, l);
       });
