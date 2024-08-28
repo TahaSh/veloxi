@@ -91,8 +91,8 @@ export class DragEventPlugin extends EventPlugin {
         this._pointerDownPerView.set(view.id, view.intersects(x, y))
         this._targetPerView.set(view.id, target)
         const initialPointer = new Vec2(
-          x - view.position.x,
-          y - view.position.y
+          x - view.position.initialX,
+          y - view.position.initialY
         )
         this._pointerX = x
         this._pointerY = y
