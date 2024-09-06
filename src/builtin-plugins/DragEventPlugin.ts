@@ -64,7 +64,6 @@ export class DragEventPlugin extends EventPlugin {
   private _initialPointer: Vec2 = new Vec2(0, 0)
   private _initialPointerPerView: Map<string, Vec2> = new Map()
   private _pointerDownPerView: Map<string, boolean> = new Map()
-  private _targetPerView: Map<string, EventTarget | null> = new Map()
   private _viewPointerPositionLog: Map<string, Array<Vec2>> = new Map()
   private _stopTimer = 0
 
@@ -85,15 +84,17 @@ export class DragEventPlugin extends EventPlugin {
   }
 
   subscribeToEvents(eventBus: EventBus): void {
-    eventBus.subscribeToEvent(Events.PointerDownEvent, ({ x, y, target }) => {
+    eventBus.subscribeToEvent(Events.PointerDownEvent, ({ x, y }) => {
       this._initialPointer = new Vec2(x, y)
       this.getViews().forEach((view) => {
         this._pointerDownPerView.set(view.id, view.intersects(x, y))
-        this._targetPerView.set(view.id, target)
-        const initialPointer = new Vec2(
-          x - view.position.initialX,
-          y - view.position.initialY
-        )
+        const initialX = view.isLayoutTransitionEnabled
+          ? view.position.initialX
+          : view.position.x
+        const initialY = view.isLayoutTransitionEnabled
+          ? view.position.initialY
+          : view.position.y
+        const initialPointer = new Vec2(x - initialX, y - initialY)
         this._pointerX = x
         this._pointerY = y
         this._initialPointerPerView.set(view.id, initialPointer)
@@ -173,10 +174,6 @@ export class DragEventPlugin extends EventPlugin {
       y: this._pointerY
     })
 
-    const target = this._targetPerView.get(view.id)
-    if (!target) return
-    if (!view.hasElement(target as HTMLElement)) return
-
     const isDragging = this._pointerDownPerView.get(view.id) === true
 
     if (!isDragging) {
@@ -185,7 +182,7 @@ export class DragEventPlugin extends EventPlugin {
 
     const eventData = {
       view,
-      target,
+      target: view.element,
       previousX,
       previousY,
       x,

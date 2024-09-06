@@ -163,14 +163,14 @@ export abstract class IPlugin<
     eventCtor: new (eventData: TEvent) => TEvent,
     eventData: TEvent
   ): void {
-    this._internalEventBus.emitEvent(eventCtor, eventData)
+    this._internalEventBus.emitEvent(eventCtor, eventData, this.pluginKey)
   }
 
   on<TEvent>(
     eventCtor: new (eventData: TEvent) => TEvent,
     listener: (eventData: TEvent) => void
   ) {
-    this._internalEventBus.subscribeToEvent(eventCtor, listener)
+    this._internalEventBus.subscribeToEvent(eventCtor, listener, this.pluginKey)
   }
 
   removeListener<TEvent>(

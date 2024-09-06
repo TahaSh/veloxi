@@ -126,8 +126,13 @@ export class Registry {
       this._viewsToBeCreated
     )
     // Create plugin for views in scoped plugins
-    const scopedViews = viewsToBeCreated.filter(
-      (domEl) => this._isScopedElement(domEl) && !this._isElementIgnored(domEl)
+    const scopedViews = Array.from(
+      new Set(
+        viewsToBeCreated.filter(
+          (domEl) =>
+            this._isScopedElement(domEl) && !this._isElementIgnored(domEl)
+        )
+      )
     )
     const restViews = viewsToBeCreated.filter(
       (domEl) => !this._isScopedElement(domEl) && !this._isElementIgnored(domEl)
@@ -336,13 +341,11 @@ export class Registry {
       plugins = this._plugins
     }
 
+    plugins.forEach((plugin) => {
+      this._destroyPlugin(plugin)
+    })
     requestAnimationFrame(() => {
-      plugins.forEach((plugin) => {
-        this._destroyPlugin(plugin)
-      })
-      requestAnimationFrame(() => {
-        callback?.()
-      })
+      callback?.()
     })
   }
 

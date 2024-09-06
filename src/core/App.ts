@@ -164,14 +164,16 @@ class App implements VeloxiApp {
     listener: (eventData: TEvent) => void,
     pluginKey?: string
   ) {
-    const plugin = this.registry.getPluginByName(
-      pluginFactory.pluginName!,
-      pluginKey
-    )
+    requestAnimationFrame(() => {
+      const plugin = this.registry.getPluginByName(
+        pluginFactory.pluginName!,
+        pluginKey
+      )
 
-    if (plugin) {
-      plugin.on(EventCtor, listener)
-    }
+      if (plugin) {
+        plugin.on(EventCtor, listener)
+      }
+    })
   }
 
   removePluginEventListener<TEvent>(

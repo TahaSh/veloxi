@@ -41,6 +41,7 @@ export interface View {
   getChildren(viewName: string): View[]
   getParent(viewName: string): View | undefined
 
+  isLayoutTransitionEnabled: boolean
   position: ViewPosition
   opacity: ViewOpacity
   borderRadius: ViewBorderRadius
@@ -177,6 +178,7 @@ export class CoreView implements View {
     this._elementReader = readElement(this)
     this.element.dataset.velViewId = this.id
     this._elementObserver.setElement(element)
+    this._viewParents = this._getParents()
   }
 
   get layoutId() {
