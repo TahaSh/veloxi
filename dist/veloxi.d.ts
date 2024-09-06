@@ -285,7 +285,6 @@ export declare class DragEventPlugin extends EventPlugin {
     private _initialPointer;
     private _initialPointerPerView;
     private _pointerDownPerView;
-    private _targetPerView;
     private _viewPointerPositionLog;
     private _stopTimer;
     setup(): void;
@@ -810,6 +809,7 @@ export declare interface View {
     getChild(viewName: string): View;
     getChildren(viewName: string): View[];
     getParent(viewName: string): View | undefined;
+    isLayoutTransitionEnabled: boolean;
     position: ViewPosition;
     opacity: ViewOpacity;
     borderRadius: ViewBorderRadius;
