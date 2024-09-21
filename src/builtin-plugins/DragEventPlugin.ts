@@ -141,7 +141,10 @@ export class DragEventPlugin extends EventPlugin {
 
           clearTimeout(this._stopTimer)
           this._stopTimer = setTimeout(() => {
-            this._emitEvent(view, directions, true)
+            const isDragging = this._pointerDownPerView.get(view.id) === true
+            if (isDragging) {
+              this._emitEvent(view, directions, true)
+            }
           }, 120)
         }
       })
