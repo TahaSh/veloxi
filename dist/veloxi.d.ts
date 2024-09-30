@@ -244,6 +244,7 @@ declare class DragEvent_2 {
         stopped: boolean;
         target: EventTarget | null;
         directions: Array<Direction>;
+        hasMoved: boolean;
     };
     view: View;
     previousX: number;
@@ -259,6 +260,7 @@ declare class DragEvent_2 {
     height: number;
     distance: number;
     stopped: boolean;
+    hasMoved: boolean;
     constructor(props: {
         view: View;
         previousX: number;
@@ -274,6 +276,7 @@ declare class DragEvent_2 {
         stopped: boolean;
         target: EventTarget | null;
         directions: Array<Direction>;
+        hasMoved: boolean;
     });
 }
 export { DragEvent_2 as DragEvent }
