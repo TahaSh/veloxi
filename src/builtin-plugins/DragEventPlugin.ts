@@ -21,6 +21,7 @@ export class DragEvent {
   height: number
   distance: number
   stopped: boolean
+  hasMoved: boolean
   constructor(
     public props: {
       view: View
@@ -37,6 +38,7 @@ export class DragEvent {
       stopped: boolean
       target: EventTarget | null
       directions: Array<Direction>
+      hasMoved: boolean
     }
   ) {
     this.previousX = props.previousX
@@ -53,6 +55,7 @@ export class DragEvent {
     this.stopped = props.stopped
     this.target = props.target
     this.directions = props.directions
+    this.hasMoved = props.hasMoved
   }
 }
 
@@ -157,6 +160,7 @@ export class DragEventPlugin extends EventPlugin {
     stopped: boolean = false
   ) {
     const logs = this._viewPointerPositionLog.get(view.id)
+    const hasMoved = !(typeof logs === 'undefined' || logs.length <= 1)
     const previousPointer =
       logs && logs.length >= 2 ? logs[logs.length - 2] : null
     const x = this._pointerX - this._initialPointerPerView.get(view.id)!.x
@@ -197,7 +201,8 @@ export class DragEventPlugin extends EventPlugin {
       height,
       isDragging,
       directions,
-      stopped
+      stopped,
+      hasMoved
     }
     this.emit(DragEvent, eventData)
   }
