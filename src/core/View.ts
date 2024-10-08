@@ -146,7 +146,13 @@ export class CoreView implements View {
     })
   }
 
+  removeListeners() {
+    this._elementObserver.destroy()
+    this._elementReader.destroy()
+  }
+
   destroy() {
+    this.removeListeners()
     this._viewProps.allProps().forEach((prop) => prop.destroy())
     this.element.removeAttribute('data-vel-view-id')
     this.element.removeAttribute('data-vel-plugin-id')

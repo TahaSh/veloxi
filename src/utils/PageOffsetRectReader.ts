@@ -6,6 +6,7 @@ import { getPageRect, PageRect } from './RectReader'
 export interface PageOffsetRectReader {
   read(size: Size): PageRect
   invalidate(): void
+  destroy(): void
 }
 
 class PageOffsetRectReaderImpl implements PageOffsetRectReader {
@@ -21,6 +22,7 @@ class PageOffsetRectReaderImpl implements PageOffsetRectReader {
   _parentEl?: HTMLElement | null
   _isSvg: boolean
   _invalid: boolean
+  _windowResizeHandler?: () => void
 
   constructor(view: CoreView) {
     this._invalid = true
@@ -35,9 +37,16 @@ class PageOffsetRectReaderImpl implements PageOffsetRectReader {
     this._parentHeight = 0
     this._offsetLeft = 0
     this._parentEl = this._element.parentElement
-    window.addEventListener('resize', () => {
+    this._windowResizeHandler = () => {
       this.invalidate()
-    })
+    }
+    window.addEventListener('resize', this._windowResizeHandler)
+  }
+
+  destroy(): void {
+    if (this._windowResizeHandler) {
+      window.removeEventListener('resize', this._windowResizeHandler)
+    }
   }
 
   invalidate() {

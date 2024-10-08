@@ -228,11 +228,13 @@ export abstract class IPlugin<
           this._layoutIdViewMapWaitingToEnter.delete(view.layoutId)
         }
         this._deleteView(tempView, true)
+        view.removeListeners()
       })
       setTimeout(() => {
         // If after 10s done() was not called, delete the item manually
         if (tempView.element.parentElement) {
           this._deleteView(tempView, true)
+          view.removeListeners()
         }
       }, 10000)
     })
@@ -242,6 +244,7 @@ export abstract class IPlugin<
     if (force || !view.layoutId) {
       this._registry.removeViewById(view.id, this.id)
       view.element.remove()
+      view.destroy()
     }
   }
 

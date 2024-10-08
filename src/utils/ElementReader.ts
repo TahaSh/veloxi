@@ -29,6 +29,10 @@ export class ElementReader {
     this._scroll = this._calculateScroll()
   }
 
+  destroy() {
+    this._pageRectReader.destroy()
+  }
+
   invalidatePageRect() {
     this._pageRectReader.invalidate()
   }
