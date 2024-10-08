@@ -137,6 +137,7 @@ declare class CoreView implements View {
     private _readWithScroll;
     private _externalUserStyles;
     constructor(element: HTMLElement, name: string, registry: Registry, layoutId?: string);
+    removeListeners(): void;
     destroy(): void;
     get elementReader(): ElementReader;
     get layoutOption(): LayoutOption;
@@ -321,6 +322,7 @@ declare class ElementReader {
     private _pageRectReader;
     private _scroll;
     constructor(view: CoreView);
+    destroy(): void;
     invalidatePageRect(): void;
     update(includeScroll?: boolean): void;
     get rect(): ViewRect;
