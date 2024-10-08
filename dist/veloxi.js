@@ -2213,7 +2213,11 @@ class xt {
       const i = t.dataset.velViewId;
       i && (this._handleRemoveView(i), t.querySelectorAll("*").forEach((s) => {
         const n = s.dataset.velViewId;
-        n && this._handleRemoveView(n);
+        n && this._plugins.forEach((r) => {
+          if (!this._viewsPerPlugin.get(r.id)) return;
+          const u = this._getPluginViewById(r, n);
+          u && u.removeListeners();
+        });
       }));
     }), this._viewsToBeRemoved = []);
   }
