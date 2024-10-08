@@ -59,6 +59,11 @@ export class Registry {
         const viewId = domEl.dataset.velViewId
         if (!viewId) return
         this._handleRemoveView(viewId)
+        domEl.querySelectorAll('*').forEach((el) => {
+          const viewId = (el as HTMLElement).dataset.velViewId
+          if (!viewId) return
+          this._handleRemoveView(viewId)
+        })
       })
       this._viewsToBeRemoved = []
     }
@@ -262,7 +267,14 @@ export class Registry {
           : `${view.name}-child`
 
         const layoutId = this._getLayoutIdForElement(childEl, plugin)
-        const childView = this.createView(childEl, viewName, layoutId)
+        let childView: CoreView
+        if (layoutId && this._layoutIdToViewMap.has(layoutId)) {
+          childView = this._layoutIdToViewMap.get(layoutId)!
+          childView.setElement(childEl)
+          childView.setPluginId(plugin.id)
+        } else {
+          childView = this.createView(childEl, viewName, layoutId)
+        }
 
         if (layoutId && !this._layoutIdToViewMap.has(layoutId)) {
           this._layoutIdToViewMap.set(layoutId, childView)

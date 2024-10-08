@@ -209,6 +209,7 @@ export abstract class IPlugin<
     } else {
       this._deleteView(view)
     }
+    view.removeListeners()
     this.onViewRemoved(view)
   }
 
