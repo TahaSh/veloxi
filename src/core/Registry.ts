@@ -62,7 +62,14 @@ export class Registry {
         domEl.querySelectorAll('*').forEach((el) => {
           const viewId = (el as HTMLElement).dataset.velViewId
           if (!viewId) return
-          this._handleRemoveView(viewId)
+          // Remove listeners from nested children
+          this._plugins.forEach((plugin) => {
+            const views = this._viewsPerPlugin.get(plugin.id)
+            if (!views) return
+            const view = this._getPluginViewById(plugin, viewId)
+            if (!view) return
+            view.removeListeners()
+          })
         })
       })
       this._viewsToBeRemoved = []
