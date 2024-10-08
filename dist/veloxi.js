@@ -299,7 +299,7 @@ class xe {
   onDataChanged(e) {
   }
   removeView(e) {
-    e.onRemoveCallback ? this._invokeRemoveCallback(e) : this._deleteView(e), this.onViewRemoved(e);
+    e.onRemoveCallback ? this._invokeRemoveCallback(e) : this._deleteView(e), e.removeListeners(), this.onViewRemoved(e);
   }
   _invokeRemoveCallback(e) {
     const t = this._createTemporaryView(e);
@@ -2211,7 +2211,10 @@ class xt {
     const e = this._viewsToBeRemoved.filter((t) => t.dataset.velViewId);
     e.length && (e.forEach((t) => {
       const i = t.dataset.velViewId;
-      i && this._handleRemoveView(i);
+      i && (this._handleRemoveView(i), t.querySelectorAll("*").forEach((s) => {
+        const n = s.dataset.velViewId;
+        n && this._handleRemoveView(n);
+      }));
     }), this._viewsToBeRemoved = []);
   }
   _getPluginNameForElement(e) {
@@ -2317,8 +2320,9 @@ class xt {
         return;
       }
       Array.from(i).filter((s) => !this._isElementIgnored(s)).forEach((s) => {
-        const n = s, r = n.dataset.velView ? n.dataset.velView : `${e.name}-child`, l = this._getLayoutIdForElement(n, t), u = this.createView(n, r, l);
-        l && !this._layoutIdToViewMap.has(l) && this._layoutIdToViewMap.set(l, u), t.addView(u), t.notifyAboutViewAdded(u);
+        const n = s, r = n.dataset.velView ? n.dataset.velView : `${e.name}-child`, l = this._getLayoutIdForElement(n, t);
+        let u;
+        l && this._layoutIdToViewMap.has(l) ? (u = this._layoutIdToViewMap.get(l), u.setElement(n), u.setPluginId(t.id)) : u = this.createView(n, r, l), l && !this._layoutIdToViewMap.has(l) && this._layoutIdToViewMap.set(l, u), t.addView(u), t.notifyAboutViewAdded(u);
       });
     }
   }

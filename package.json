@@ -1,7 +1,7 @@
 {
   "name": "veloxi",
   "author": "Taha Shashtari (taha@tahazsh.com)",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "private": false,
   "type": "module",
   "main": "./dist/veloxi.min.js",
